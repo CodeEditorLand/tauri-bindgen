@@ -1,6 +1,0 @@
-interface floats {
-  func float32_param(x: float32)
-  func float64_param(x: float64)
-  func float32_result() -> float32
-  func float64_result() -> float64
-}
