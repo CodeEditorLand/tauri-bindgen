@@ -1,0 +1,6 @@
+interface chars {
+  /// A function that accepts a character
+  func take_char(x: char)
+  /// A function that returns a character
+  func return_char() -> char
+}

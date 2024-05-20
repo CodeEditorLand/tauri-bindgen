@@ -1,0 +1,5 @@
+interface strings {
+  func a(x: string)
+  func b() -> string
+  func c(a: string, b: string) -> string
+}

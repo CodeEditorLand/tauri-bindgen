@@ -1,0 +1,17 @@
+[package]
+name = "rust-macro-shared"
+authors.workspace = true
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[lib]
+doctest = false
+test = false
+
+[dependencies]
+tauri-bindgen-core.workspace = true
+quote.workspace = true
+proc-macro2.workspace = true
+syn.workspace = true
+wit-parser.workspace = true

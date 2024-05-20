@@ -1,0 +1,25 @@
+[package]
+name = "tauri-bindgen-gen-host"
+authors.workspace = true
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+tauri-bindgen-core.workspace = true
+tauri-bindgen-gen-rust = { path = "../gen-rust" }
+wit-parser.workspace = true
+heck.workspace = true
+quote.workspace = true
+proc-macro2.workspace = true
+syn.workspace = true
+prettyplease = "0.2.15"
+clap = { workspace = true, optional = true }
+
+[dev-dependencies]
+tauri-bindgen-host = { path = "../host" }
+serde = { version = "1.0.196", features = ["derive"] }
+pretty_assertions = "1.4.0"
+
+[features]
+cli = ["clap"]

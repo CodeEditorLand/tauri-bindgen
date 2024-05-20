@@ -1,0 +1,63 @@
+[package]
+name = "tauri-bindgen"
+authors.workspace = true
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true # MSRV
+
+[workspace]
+members = ["crates/*"]
+resolver = "2"
+
+[workspace.package]
+authors = ["Jonas Kruckenberg <iterpre@protonmail.com>"]
+version = "0.2.0"
+edition = "2021"
+rust-version = "1.70"
+
+[workspace.dependencies]
+thiserror = "1.0.56"
+bitflags = { version = "2.4.2", features = ["serde"] }
+heck =  { version = "0.4", features = ["unicode"] }
+clap = { version = "4.4.3", features = ["derive"] }
+tauri-bindgen-core = { path = "crates/core" }
+tauri-bindgen-gen-host = { path = "crates/gen-host", features = ['cli'] }
+tauri-bindgen-gen-markdown = { path = "crates/gen-markdown", features = ['cli'] }
+tauri-bindgen-gen-guest-rust = { path = "crates/gen-guest-rust", features = ['cli'] }
+tauri-bindgen-gen-guest-ts = { path = "crates/gen-guest-ts", features = ['cli'] }
+tauri-bindgen-gen-guest-js = { path = "crates/gen-guest-js", features = ['cli'] }
+wit-parser = { path = "crates/wit-parser" }
+miette = { version = "5.10.0", features = ["fancy"] }
+log = { version = "0.4.20", features = [ "kv_unstable", "kv_unstable_std" ] }
+serde = "1.0.195"
+quote = "1.0.35"
+proc-macro2 = "1.0.78"
+syn = "2.0.36"
+schemars = "0.8.16"
+serde_json = "1.0"
+tauri = "2.0.0-alpha.21"
+
+[dependencies]
+clap.workspace = true
+tauri-bindgen-core.workspace = true
+tauri-bindgen-gen-host.workspace = true
+tauri-bindgen-gen-markdown = { workspace = true, optional = true }
+tauri-bindgen-gen-guest-rust.workspace = true
+tauri-bindgen-gen-guest-ts.workspace = true
+tauri-bindgen-gen-guest-js.workspace = true
+wit-parser.workspace = true
+miette.workspace = true
+env_logger = "0.10.0"
+log.workspace = true
+clap_complete = "4.4.1"
+serde_json.workspace = true
+
+[features]
+unstable = ["dep:tauri-bindgen-gen-markdown"]
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "z"
+strip = true

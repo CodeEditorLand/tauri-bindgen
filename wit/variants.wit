@@ -1,0 +1,140 @@
+interface variants {
+  enum e1 {
+      a,
+  }
+
+  func e1_arg(x: e1)
+  func e1_result() -> e1
+
+  union u1 {
+      u32,
+      float32,
+  }
+
+  func u1_arg(x: u1)
+  func u1_result() -> u1
+
+  record empty {}
+
+  variant v1 {
+      a,
+      b(u1),
+      c(e1),
+      d(string),
+      e(empty),
+      f,
+      g(u32),
+  }
+
+  func v1_arg(x: v1)
+  func v1_result() -> v1
+
+  func bool_arg(x: bool)
+  func bool_result() -> bool
+
+  func option_arg(
+    a: option<bool>,
+    b: option<tuple<>>,
+    c: option<u32>,
+    d: option<e1>,
+    e: option<float32>,
+    f: option<u1>,
+    g: option<option<bool>>,
+  )
+  func option_result() -> tuple<
+    option<bool>,
+    option<tuple<>>,
+    option<u32>,
+    option<e1>,
+    option<float32>,
+    option<u1>,
+    option<option<bool>>,
+  >
+
+  variant casts1 {
+    a(s32),
+    b(float32),
+  }
+
+  variant casts2 {
+    a(float64),
+    b(float32),
+  }
+
+  variant casts3 {
+    a(float64),
+    b(u64),
+  }
+
+  variant casts4 {
+    a(u32),
+    b(s64),
+  }
+
+  variant casts5 {
+    a(float32),
+    b(s64),
+  }
+
+  variant casts6 {
+    a(tuple<float32, u32>),
+    b(tuple<u32, u32>),
+  }
+
+  func casts(
+    a: casts1,
+    b: casts2,
+    c: casts3,
+    d: casts4,
+    e: casts5,
+    f: casts6,
+  ) -> tuple<
+    casts1,
+    casts2,
+    casts3,
+    casts4,
+    casts5,
+    casts6,
+  >
+
+  func result_arg(
+    a: result,
+    b: result<_, e1>,
+    c: result<e1>,
+    d: result<tuple<>, tuple<>>,
+    e: result<u32, v1>,
+    f: result<string, list<u8>>,
+  )
+  func result_result() -> tuple<
+    result,
+    result<_, e1>,
+    result<e1>,
+    result<tuple<>, tuple<>>,
+    result<u32, v1>,
+    result<string, list<u8>>,
+  >
+
+  enum my_errno {
+    bad1,
+    bad2,
+  }
+
+  func return_result_sugar() -> result<s32, my_errno>
+  func return_result_sugar2() -> result<_, my_errno>
+  func return_result_sugar3() -> result<my_errno, my_errno>
+  func return_result_sugar4() -> result<tuple<s32, u32>, my_errno>
+  func return_option_sugar() -> option<s32>
+  func return_option_sugar2() -> option<my_errno>
+
+  func result_simple() -> result<u32, s32>
+
+  record is_clone {
+    v1: v1,
+  }
+
+  func is_clone_arg(a: is_clone)
+  func is_clone_return() -> is_clone
+
+  func return_named_option() -> (a: option<u8>)
+  func return_named_result() -> (a: result<u8, my_errno>)
+}
