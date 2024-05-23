@@ -1,7 +1,6 @@
 target
 .DS_STORE
 book
-Cargo.lock
 .idea
 
 # Created by https://www.toptal.com/developers/gitignore/api/node
@@ -78,7 +77,6 @@ typings/
 .yarn-integrity
 
 # dotenv environment variables file
-.env
 .env.test
 
 # parcel-bundler cache (https://parceljs.org/)
@@ -122,7 +120,6 @@ dist
 
 ### macOS ###
 # General
-.DS_Store
 .AppleDouble
 .LSOverride
 
@@ -189,7 +186,6 @@ $RECYCLE.BIN/
 #Added by cargo
 
 /target
-Cargo.lock
 
 .pnp.*
 .yarn/*
