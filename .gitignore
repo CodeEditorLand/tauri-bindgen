@@ -1,6 +1,7 @@
 target
 .DS_STORE
 book
+Cargo.lock
 .idea
 
 # Created by https://www.toptal.com/developers/gitignore/api/node
@@ -47,6 +48,7 @@ bower_components
 build/Release
 
 # Dependency directories
+node_modules/
 jspm_packages/
 
 # TypeScript v1 declaration files
@@ -77,6 +79,7 @@ typings/
 .yarn-integrity
 
 # dotenv environment variables file
+.env
 .env.test
 
 # parcel-bundler cache (https://parceljs.org/)
@@ -120,6 +123,7 @@ dist
 
 ### macOS ###
 # General
+.DS_Store
 .AppleDouble
 .LSOverride
 
@@ -186,6 +190,7 @@ $RECYCLE.BIN/
 #Added by cargo
 
 /target
+Cargo.lock
 
 .pnp.*
 .yarn/*
