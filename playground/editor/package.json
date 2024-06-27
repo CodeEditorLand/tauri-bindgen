@@ -3,14 +3,14 @@
 		"prepare": "rollup -c"
 	},
 	"dependencies": {
-		"@codemirror/lang-javascript": "^6.2.2",
-		"@codemirror/lang-rust": "^6.0.1",
-		"@codemirror/language": "^6.10.2",
-		"@codemirror/state": "^6.4.1",
-		"@lezer/generator": "^1.7.1",
-		"@lezer/highlight": "^1.2.0",
-		"@lezer/lr": "^1.4.1",
-		"codemirror": "^6.0.1"
+		"@codemirror/lang-javascript": "6.2.2",
+		"@codemirror/lang-rust": "6.0.1",
+		"@codemirror/language": "6.10.2",
+		"@codemirror/state": "6.4.1",
+		"@lezer/generator": "1.7.1",
+		"@lezer/highlight": "1.2.0",
+		"@lezer/lr": "1.4.1",
+		"codemirror": "6.0.1"
 	},
 	"devDependencies": {}
 }
