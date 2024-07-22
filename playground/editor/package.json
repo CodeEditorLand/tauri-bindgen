@@ -1,4 +1,7 @@
 {
+	"scripts": {
+		"prepare": "rollup -c"
+	},
 	"dependencies": {
 		"@codemirror/lang-javascript": "6.2.2",
 		"@codemirror/lang-rust": "6.0.1",
@@ -9,8 +12,5 @@
 		"@lezer/lr": "1.4.1",
 		"codemirror": "6.0.1"
 	},
-	"devDependencies": {},
-	"scripts": {
-		"prepare": "rollup -c"
-	}
+	"devDependencies": {}
 }
