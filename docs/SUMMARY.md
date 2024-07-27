@@ -1,8 +1,8 @@
 # Summary
 
-- [The `wit` format](./WIT.md)
+-   [The `wit` format](./WIT.md)
 
 # Specification
 
-- [WIT](./specs/WIT.md)
-- [ABI](./specs/ABI.md)
+-   [WIT](./specs/WIT.md)
+-   [ABI](./specs/ABI.md)
