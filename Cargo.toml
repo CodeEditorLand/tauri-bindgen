@@ -64,8 +64,9 @@ serde_json.workspace = true
 unstable = ["dep:tauri-bindgen-gen-markdown"]
 
 [profile.release]
-panic = "abort"
+opt-level = 3
 codegen-units = 1
+debug = false
 lto = true
-opt-level = "z"
+panic = "abort"
 strip = true
