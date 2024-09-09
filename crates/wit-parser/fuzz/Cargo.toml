@@ -19,12 +19,7 @@ path = ".."
 members = ["."]
 
 [profile.release]
-opt-level = 3
-codegen-units = 1
-debug = false
-lto = true
-panic = "abort"
-strip = true
+debug = 1
 
 [[bin]]
 name = "parse"

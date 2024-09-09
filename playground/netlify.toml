@@ -1,8 +1,8 @@
 [build.environment]
-NPM_FLAGS = "--version" # prevent Netlify npm install
+  NPM_FLAGS = "--version" # prevent Netlify npm install
 [build]
-publish = 'dist'
-command = """
+  publish = 'dist'
+  command = """
     cd editor
     npx pnpm install --store=node_modules/.pnpm-store
     cd ..
