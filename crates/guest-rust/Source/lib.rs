@@ -10,12 +10,12 @@ use web_sys::{Request, RequestInit, RequestMode, Response};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("todo")]
-    Postcard(#[from] postcard::Error),
-    #[error("todo")]
-    JsError(JsValue),
-    #[error("todo")]
-    NoWindow,
+	#[error("todo")]
+	Postcard(#[from] postcard::Error),
+	#[error("todo")]
+	JsError(JsValue),
+	#[error("todo")]
+	NoWindow,
 }
 
 /// # Errors
@@ -27,39 +27,35 @@ pub enum Error {
 /// Panics when the response returned by JavaScript is not a `ResponseObject`
 pub async fn invoke<P, R>(module: &str, method: &str, val: &P) -> Result<R, Error>
 where
-    P: Serialize,
-    R: DeserializeOwned,
+	P: Serialize,
+	R: DeserializeOwned,
 {
-    let mut opts = RequestInit::new();
-    opts.method("POST");
-    opts.mode(RequestMode::Cors);
+	let mut opts = RequestInit::new();
+	opts.method("POST");
+	opts.mode(RequestMode::Cors);
 
-    let bytes = postcard::to_allocvec(val)?;
-    let body = unsafe { Uint8Array::view(&bytes) };
-    opts.body(Some(&body));
+	let bytes = postcard::to_allocvec(val)?;
+	let body = unsafe { Uint8Array::view(&bytes) };
+	opts.body(Some(&body));
 
-    let url = format!("ipc://localhost/{module}/{method}");
+	let url = format!("ipc://localhost/{module}/{method}");
 
-    let request = Request::new_with_str_and_init(&url, &opts).map_err(Error::JsError)?;
+	let request = Request::new_with_str_and_init(&url, &opts).map_err(Error::JsError)?;
 
-    request
-        .headers()
-        .set("Accept", "application/octet-stream")
-        .map_err(Error::JsError)?;
+	request.headers().set("Accept", "application/octet-stream").map_err(Error::JsError)?;
 
-    let window = web_sys::window().ok_or(Error::NoWindow)?;
-    let resp_value = JsFuture::from(window.fetch_with_request(&request))
-        .await
-        .map_err(Error::JsError)?;
+	let window = web_sys::window().ok_or(Error::NoWindow)?;
+	let resp_value =
+		JsFuture::from(window.fetch_with_request(&request)).await.map_err(Error::JsError)?;
 
-    // `resp_value` is a `Response` object.
-    assert!(resp_value.is_instance_of::<Response>());
-    let resp: Response = resp_value.dyn_into().map_err(Error::JsError)?;
+	// `resp_value` is a `Response` object.
+	assert!(resp_value.is_instance_of::<Response>());
+	let resp: Response = resp_value.dyn_into().map_err(Error::JsError)?;
 
-    let body = JsFuture::from(resp.array_buffer().map_err(Error::JsError)?)
-        .await
-        .map_err(Error::JsError)?;
-    let body = Uint8Array::new(&body);
+	let body = JsFuture::from(resp.array_buffer().map_err(Error::JsError)?)
+		.await
+		.map_err(Error::JsError)?;
+	let body = Uint8Array::new(&body);
 
-    Ok(postcard::from_bytes(&body.to_vec())?)
+	Ok(postcard::from_bytes(&body.to_vec())?)
 }
