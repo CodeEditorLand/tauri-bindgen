@@ -1,3 +1,3 @@
 function deserializeU8(de) {
-    return de.pop()
+	return de.pop();
 }

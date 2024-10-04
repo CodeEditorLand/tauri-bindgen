@@ -1,5 +1,5 @@
 function deserializeBool(de) {
-    const val = de.pop();
+	const val = de.pop();
 
-    return val != 0
+	return val != 0;
 }

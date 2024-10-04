@@ -1,19 +1,19 @@
 class Deserializer {
-    source
-    offset
-    
-    constructor(bytes) {
-        this.source = bytes
-        this.offset = 0
-    }
+	source;
+	offset;
 
-    pop() {
-        return this.source[this.offset++]
-    }
+	constructor(bytes) {
+		this.source = bytes;
+		this.offset = 0;
+	}
 
-    try_take_n(len) {
-        const out = this.source.slice(this.offset, this.offset + len)
-        this.offset += len
-        return out
-    }
+	pop() {
+		return this.source[this.offset++];
+	}
+
+	try_take_n(len) {
+		const out = this.source.slice(this.offset, this.offset + len);
+		this.offset += len;
+		return out;
+	}
 }

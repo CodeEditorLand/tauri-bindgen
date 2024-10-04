@@ -1,3 +1,3 @@
 function serializeS8(out, val) {
-    out.push(val)
+	out.push(val);
 }
