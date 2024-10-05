@@ -10,7 +10,7 @@ pub enum Error {
 	UnexpectedEof,
 }
 
-fn block_comment(lex: &mut Lexer<Token>) -> FilterResult<(), Error> {
+fn block_comment(lex:&mut Lexer<Token>) -> FilterResult<(), Error> {
 	let mut depth = 1;
 	while depth > 0 {
 		let remainder = lex.remainder();
@@ -18,11 +18,13 @@ fn block_comment(lex: &mut Lexer<Token>) -> FilterResult<(), Error> {
 			Some("/*") => depth += 1,
 			Some("*/") => depth -= 1,
 			None => return FilterResult::Error(Error::UnexpectedEof),
-			_ => {}
+			_ => {},
 		}
 
 		// comments might include multi-byte unicode code points
-		// and since `Lexer::bump()` panics if it ends up in the middle of a code point we find the next valid character boundary here and jump to that.
+		// and since `Lexer::bump()` panics if it ends up in the middle of a
+		// code point we find the next valid character boundary here and jump to
+		// that.
 		let mut bump_by = 1;
 		while !remainder.is_char_boundary(bump_by) {
 			bump_by += 1;
@@ -150,7 +152,7 @@ pub enum Token {
 }
 
 impl Token {
-	pub const IFACE_ITEM_KEYWORD: [Token; 8] = [
+	pub const IFACE_ITEM_KEYWORD:[Token; 8] = [
 		Token::Enum,
 		Token::Flags,
 		Token::Func,
@@ -160,7 +162,7 @@ impl Token {
 		Token::Variant,
 		Token::Resource,
 	];
-	pub const TYPE_KEYWORD: [Token; 20] = [
+	pub const TYPE_KEYWORD:[Token; 20] = [
 		Token::U8,
 		Token::U16,
 		Token::U32,
@@ -182,6 +184,7 @@ impl Token {
 		Token::Tuple,
 		Token::Ident,
 	];
+
 	pub fn as_str(&self) -> &str {
 		match self {
 			Token::Whitespace => "whitespace",
@@ -237,7 +240,7 @@ impl Token {
 }
 
 impl std::fmt::Display for Token {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+	fn fmt(&self, f:&mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		f.write_str(self.as_str())
 	}
 }

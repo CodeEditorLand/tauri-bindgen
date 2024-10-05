@@ -6,10 +6,10 @@ use miette::Result;
 pub struct Completions {
 	/// The shell syntax to use. Infers when missing.
 	#[clap(long, value_enum)]
-	shell: Option<Shell>,
+	shell:Option<Shell>,
 }
 
-pub fn run(opts: &Completions) -> Result<()> {
+pub fn run(opts:&Completions) -> Result<()> {
 	let shell = opts
 		.shell
 		.or_else(Shell::from_env)

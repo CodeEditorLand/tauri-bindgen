@@ -19,7 +19,9 @@ fn main() {
 		let source = value.as_string().unwrap();
 
 		let parse_res = wit_parser::parse_and_resolve_str(&source, |_| false)
-			.map_err(|err| err.with_source_code(NamedSource::new("input", source)));
+			.map_err(|err| {
+				err.with_source_code(NamedSource::new("input", source))
+			});
 
 		log::debug!("value: {:?}", parse_res);
 
@@ -51,18 +53,27 @@ fn main() {
 				update_output(
 					"guest-js",
 					&gen_interface(
-						tauri_bindgen_gen_guest_js::Builder { prettier: false, romefmt: false },
+						tauri_bindgen_gen_guest_js::Builder {
+							prettier: false,
+							romefmt: false,
+						},
 						iface.clone(),
 					),
 				);
 				update_output(
 					"guest-ts",
 					&gen_interface(
-						tauri_bindgen_gen_guest_ts::Builder { prettier: false, romefmt: false },
+						tauri_bindgen_gen_guest_ts::Builder {
+							prettier: false,
+							romefmt: false,
+						},
 						iface.clone(),
 					),
 				);
-				let markdown = gen_interface(tauri_bindgen_gen_markdown::Builder {}, iface);
+				let markdown = gen_interface(
+					tauri_bindgen_gen_markdown::Builder {},
+					iface,
+				);
 				let parser = Parser::new_ext(
 					&markdown,
 					Options::ENABLE_STRIKETHROUGH
@@ -73,10 +84,10 @@ fn main() {
 				let mut html_output = String::new();
 				html::push_html(&mut html_output, parser);
 				update_output("markdown", &html_output);
-			}
+			},
 			Err(err) => {
 				update_output("errors", &format!("{:?}", err));
-			}
+			},
 		}
 	}) as Box<dyn FnMut(JsValue)>);
 

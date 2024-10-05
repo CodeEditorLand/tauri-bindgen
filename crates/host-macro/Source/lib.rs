@@ -6,7 +6,7 @@ use syn::{
 use tauri_bindgen_gen_host::Builder;
 
 #[proc_macro]
-pub fn generate(input: TokenStream) -> TokenStream {
+pub fn generate(input:TokenStream) -> TokenStream {
 	rust_macro_shared::generate::<Opt, Builder>(input)
 }
 
@@ -20,7 +20,7 @@ enum Opt {
 }
 
 impl Parse for Opt {
-	fn parse(input: ParseStream<'_>) -> Result<Self> {
+	fn parse(input:ParseStream<'_>) -> Result<Self> {
 		let l = input.lookahead1();
 
 		if l.peek(Token![async]) {
@@ -38,7 +38,7 @@ impl Parse for Opt {
 }
 
 impl rust_macro_shared::Configure<Builder> for Opt {
-	fn configure(self, builder: &mut Builder) {
+	fn configure(self, builder:&mut Builder) {
 		match self {
 			Opt::Async(val) => builder.async_ = val,
 			Opt::Tracing(val) => builder.tracing = val,

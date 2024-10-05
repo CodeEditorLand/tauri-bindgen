@@ -6,7 +6,7 @@ use syn::{
 use tauri_bindgen_gen_guest_rust::Builder;
 
 #[proc_macro]
-pub fn generate(input: TokenStream) -> TokenStream {
+pub fn generate(input:TokenStream) -> TokenStream {
 	rust_macro_shared::generate::<Opt, Builder>(input)
 }
 
@@ -22,7 +22,7 @@ enum Opt {
 }
 
 impl Parse for Opt {
-	fn parse(input: ParseStream<'_>) -> Result<Self> {
+	fn parse(input:ParseStream<'_>) -> Result<Self> {
 		let l = input.lookahead1();
 
 		if l.peek(kw::unchecked) {
@@ -40,7 +40,7 @@ impl Parse for Opt {
 }
 
 impl rust_macro_shared::Configure<Builder> for Opt {
-	fn configure(self, builder: &mut Builder) {
+	fn configure(self, builder:&mut Builder) {
 		match self {
 			Opt::Unchecked(val) => builder.unchecked = val,
 			Opt::NoStd(val) => builder.no_std = val,

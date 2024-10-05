@@ -1,32 +1,40 @@
 #![allow(clippy::missing_panics_doc, clippy::missing_errors_doc)]
 
+use std::iter::Peekable;
+
+use logos::{Span, SpannedIter};
+
 use crate::{
 	lex::Token,
 	util::{find_similar, print_list},
-	Error, Result,
+	Error,
+	Result,
 };
-use logos::{Span, SpannedIter};
-use std::iter::Peekable;
 
 pub type Tokens<'a> = Peekable<SpannedIter<'a, Token>>;
 
 trait TokensExt {
-	fn next_if_token(&mut self, token: Token) -> Result<Option<(Token, Span)>>;
-	fn expect(&mut self, token: Token) -> Result<(Token, Span)>;
+	fn next_if_token(&mut self, token:Token) -> Result<Option<(Token, Span)>>;
+	fn expect(&mut self, token:Token) -> Result<(Token, Span)>;
 }
 
 impl<'a> TokensExt for Tokens<'a> {
-	fn next_if_token(&mut self, expected: Token) -> Result<Option<(Token, Span)>> {
+	fn next_if_token(
+		&mut self,
+		expected:Token,
+	) -> Result<Option<(Token, Span)>> {
 		self.next_if(|(found, _)| *found == Ok(expected))
 			.map(|(found, range)| found.map(|token| (token, range)))
 			.transpose()
 			.map_err(Error::Lex)
 	}
 
-	fn expect(&mut self, expected: Token) -> Result<(Token, Span)> {
+	fn expect(&mut self, expected:Token) -> Result<(Token, Span)> {
 		match self.next() {
 			Some((Ok(found), span)) if found == expected => Ok((found, span)),
-			Some((Ok(found), span)) => Err(Error::unexpected_token(span, [expected], found)),
+			Some((Ok(found), span)) => {
+				Err(Error::unexpected_token(span, [expected], found))
+			},
 			Some((Err(err), _)) => Err(Error::Lex(err)),
 			None => Err(Error::UnexpectedEof),
 		}
@@ -35,23 +43,22 @@ impl<'a> TokensExt for Tokens<'a> {
 
 pub trait FromTokens<'a>
 where
-	Self: Sized,
-{
-	fn parse(tokens: &mut Tokens<'a>) -> Result<Self>;
+	Self: Sized, {
+	fn parse(tokens:&mut Tokens<'a>) -> Result<Self>;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Interface {
-	pub ident: Span,
-	pub docs: Vec<Span>,
-	pub items: Vec<InterfaceItem>,
+	pub ident:Span,
+	pub docs:Vec<Span>,
+	pub items:Vec<InterfaceItem>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InterfaceItem {
-	pub docs: Vec<Span>,
-	pub ident: Span,
-	pub inner: InterfaceItemInner,
+	pub docs:Vec<Span>,
+	pub ident:Span,
+	pub inner:InterfaceItemInner,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -68,8 +75,8 @@ pub enum InterfaceItemInner {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Func {
-	pub params: NamedTypeList,
-	pub result: Option<FuncResult>,
+	pub params:NamedTypeList,
+	pub result:Option<FuncResult>,
 }
 
 pub type NamedTypeList = Vec<(Span, Type)>;
@@ -82,41 +89,41 @@ pub enum FuncResult {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RecordField {
-	pub ident: Span,
-	pub docs: Vec<Span>,
-	pub ty: Type,
+	pub ident:Span,
+	pub docs:Vec<Span>,
+	pub ty:Type,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FlagsField {
-	pub ident: Span,
-	pub docs: Vec<Span>,
+	pub ident:Span,
+	pub docs:Vec<Span>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct VariantCase {
-	pub ident: Span,
-	pub docs: Vec<Span>,
-	pub ty: Option<Type>,
+	pub ident:Span,
+	pub docs:Vec<Span>,
+	pub ty:Option<Type>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EnumCase {
-	pub ident: Span,
-	pub docs: Vec<Span>,
+	pub ident:Span,
+	pub docs:Vec<Span>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UnionCase {
-	pub docs: Vec<Span>,
-	pub ty: Type,
+	pub docs:Vec<Span>,
+	pub ty:Type,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Method {
-	pub ident: Span,
-	pub docs: Vec<Span>,
-	pub inner: Func,
+	pub ident:Span,
+	pub docs:Vec<Span>,
+	pub inner:Func,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -139,12 +146,12 @@ pub enum Type {
 	List(Box<Type>),
 	Tuple(Vec<Type>),
 	Option(Box<Type>),
-	Result { ok: Option<Box<Type>>, err: Option<Box<Type>> },
+	Result { ok:Option<Box<Type>>, err:Option<Box<Type>> },
 	Id(Span),
 }
 
 impl<'a> FromTokens<'a> for Interface {
-	fn parse(tokens: &mut Tokens<'a>) -> Result<Self> {
+	fn parse(tokens:&mut Tokens<'a>) -> Result<Self> {
 		let docs = parse_docs(tokens);
 
 		tokens.expect(Token::Interface)?;
@@ -153,7 +160,8 @@ impl<'a> FromTokens<'a> for Interface {
 
 		log::trace!("parsing interface items...");
 
-		let items = parse_list(tokens, Token::LeftBrace, Token::RightBrace, None)?;
+		let items =
+			parse_list(tokens, Token::LeftBrace, Token::RightBrace, None)?;
 
 		log::debug!("successfully parsed interface");
 
@@ -162,7 +170,7 @@ impl<'a> FromTokens<'a> for Interface {
 }
 
 impl<'a> FromTokens<'a> for InterfaceItem {
-	fn parse(tokens: &mut Tokens<'a>) -> Result<Self> {
+	fn parse(tokens:&mut Tokens<'a>) -> Result<Self> {
 		let docs = parse_docs(tokens);
 
 		let (kind, kind_span) = tokens.next().ok_or(Error::UnexpectedEof)?;
@@ -171,50 +179,75 @@ impl<'a> FromTokens<'a> for InterfaceItem {
 
 		let inner = match kind? {
 			Token::Record => {
-				let inner =
-					parse_list(tokens, Token::LeftBrace, Token::RightBrace, Some(Token::Comma))?;
+				let inner = parse_list(
+					tokens,
+					Token::LeftBrace,
+					Token::RightBrace,
+					Some(Token::Comma),
+				)?;
 
 				InterfaceItemInner::Record(inner)
-			}
+			},
 			Token::Enum => {
-				let inner =
-					parse_list(tokens, Token::LeftBrace, Token::RightBrace, Some(Token::Comma))?;
+				let inner = parse_list(
+					tokens,
+					Token::LeftBrace,
+					Token::RightBrace,
+					Some(Token::Comma),
+				)?;
 
 				InterfaceItemInner::Enum(inner)
-			}
+			},
 			Token::Flags => {
-				let inner =
-					parse_list(tokens, Token::LeftBrace, Token::RightBrace, Some(Token::Comma))?;
+				let inner = parse_list(
+					tokens,
+					Token::LeftBrace,
+					Token::RightBrace,
+					Some(Token::Comma),
+				)?;
 
 				InterfaceItemInner::Flags(inner)
-			}
+			},
 			Token::Variant => {
-				let inner =
-					parse_list(tokens, Token::LeftBrace, Token::RightBrace, Some(Token::Comma))?;
+				let inner = parse_list(
+					tokens,
+					Token::LeftBrace,
+					Token::RightBrace,
+					Some(Token::Comma),
+				)?;
 
 				InterfaceItemInner::Variant(inner)
-			}
+			},
 			Token::Union => {
-				let inner =
-					parse_list(tokens, Token::LeftBrace, Token::RightBrace, Some(Token::Comma))?;
+				let inner = parse_list(
+					tokens,
+					Token::LeftBrace,
+					Token::RightBrace,
+					Some(Token::Comma),
+				)?;
 
 				InterfaceItemInner::Union(inner)
-			}
+			},
 			Token::Type => {
 				tokens.expect(Token::Equals)?;
 
 				InterfaceItemInner::Alias(Type::parse(tokens)?)
-			}
+			},
 			Token::Func => {
 				let inner = Func::parse(tokens)?;
 
 				InterfaceItemInner::Func(inner)
-			}
+			},
 			Token::Resource => {
-				let inner = parse_list(tokens, Token::LeftBrace, Token::RightBrace, None)?;
+				let inner = parse_list(
+					tokens,
+					Token::LeftBrace,
+					Token::RightBrace,
+					None,
+				)?;
 
 				InterfaceItemInner::Resource(inner)
-			}
+			},
 			Token::Use => todo!(),
 			found => {
 				let suggestions = find_similar(
@@ -235,7 +268,7 @@ impl<'a> FromTokens<'a> for InterfaceItem {
 					found,
 					format!("Did you mean \"{}\"?", print_list(suggestions)),
 				));
-			}
+			},
 		};
 
 		Ok(InterfaceItem { docs, ident, inner })
@@ -243,7 +276,7 @@ impl<'a> FromTokens<'a> for InterfaceItem {
 }
 
 impl<'a> FromTokens<'a> for Func {
-	fn parse(tokens: &mut Tokens<'a>) -> Result<Self> {
+	fn parse(tokens:&mut Tokens<'a>) -> Result<Self> {
 		let params = NamedTypeList::parse(tokens)?;
 
 		let result = if tokens.next_if_token(Token::RArrow)?.is_some() {
@@ -257,13 +290,18 @@ impl<'a> FromTokens<'a> for Func {
 }
 
 impl<'a> FromTokens<'a> for NamedTypeList {
-	fn parse(tokens: &mut Tokens<'a>) -> Result<Self> {
-		parse_list(tokens, Token::LeftParen, Token::RightParen, Some(Token::Comma))
+	fn parse(tokens:&mut Tokens<'a>) -> Result<Self> {
+		parse_list(
+			tokens,
+			Token::LeftParen,
+			Token::RightParen,
+			Some(Token::Comma),
+		)
 	}
 }
 
 impl<'a> FromTokens<'a> for (Span, Type) {
-	fn parse(tokens: &mut Tokens<'a>) -> Result<Self> {
+	fn parse(tokens:&mut Tokens<'a>) -> Result<Self> {
 		let (_, ident) = tokens.expect(Token::Ident)?;
 
 		tokens.expect(Token::Colon)?;
@@ -275,7 +313,7 @@ impl<'a> FromTokens<'a> for (Span, Type) {
 }
 
 impl<'a> FromTokens<'a> for FuncResult {
-	fn parse(tokens: &mut Tokens<'a>) -> Result<Self> {
+	fn parse(tokens:&mut Tokens<'a>) -> Result<Self> {
 		if let Some((Ok(Token::LeftParen), _)) = tokens.peek() {
 			Ok(FuncResult::Named(NamedTypeList::parse(tokens)?))
 		} else {
@@ -285,7 +323,7 @@ impl<'a> FromTokens<'a> for FuncResult {
 }
 
 impl<'a> FromTokens<'a> for RecordField {
-	fn parse(tokens: &mut Tokens<'a>) -> Result<Self> {
+	fn parse(tokens:&mut Tokens<'a>) -> Result<Self> {
 		let docs = parse_docs(tokens);
 
 		let (_, ident) = tokens.expect(Token::Ident)?;
@@ -299,7 +337,7 @@ impl<'a> FromTokens<'a> for RecordField {
 }
 
 impl<'a> FromTokens<'a> for FlagsField {
-	fn parse(tokens: &mut Tokens<'a>) -> Result<Self> {
+	fn parse(tokens:&mut Tokens<'a>) -> Result<Self> {
 		let docs = parse_docs(tokens);
 
 		let (_, ident) = tokens.expect(Token::Ident)?;
@@ -309,7 +347,7 @@ impl<'a> FromTokens<'a> for FlagsField {
 }
 
 impl<'a> FromTokens<'a> for VariantCase {
-	fn parse(tokens: &mut Tokens<'a>) -> Result<Self> {
+	fn parse(tokens:&mut Tokens<'a>) -> Result<Self> {
 		let docs = parse_docs(tokens);
 
 		let (_, ident) = tokens.expect(Token::Ident)?;
@@ -328,7 +366,7 @@ impl<'a> FromTokens<'a> for VariantCase {
 }
 
 impl<'a> FromTokens<'a> for EnumCase {
-	fn parse(tokens: &mut Tokens<'a>) -> Result<Self> {
+	fn parse(tokens:&mut Tokens<'a>) -> Result<Self> {
 		let docs = parse_docs(tokens);
 
 		let (_, ident) = tokens.expect(Token::Ident)?;
@@ -338,7 +376,7 @@ impl<'a> FromTokens<'a> for EnumCase {
 }
 
 impl<'a> FromTokens<'a> for UnionCase {
-	fn parse(tokens: &mut Tokens<'a>) -> Result<Self> {
+	fn parse(tokens:&mut Tokens<'a>) -> Result<Self> {
 		let docs = parse_docs(tokens);
 
 		let ty = Type::parse(tokens)?;
@@ -348,7 +386,7 @@ impl<'a> FromTokens<'a> for UnionCase {
 }
 
 impl<'a> FromTokens<'a> for Method {
-	fn parse(tokens: &mut Tokens<'a>) -> Result<Self> {
+	fn parse(tokens:&mut Tokens<'a>) -> Result<Self> {
 		let docs = parse_docs(tokens);
 
 		tokens.expect(Token::Func)?;
@@ -362,7 +400,7 @@ impl<'a> FromTokens<'a> for Method {
 }
 
 impl<'a> FromTokens<'a> for Type {
-	fn parse(tokens: &mut Tokens<'a>) -> Result<Self> {
+	fn parse(tokens:&mut Tokens<'a>) -> Result<Self> {
 		let (token, span) = tokens.next().ok_or(Error::UnexpectedEof)?;
 
 		match token? {
@@ -387,20 +425,24 @@ impl<'a> FromTokens<'a> for Type {
 				tokens.expect(Token::GreaterThan)?;
 
 				Ok(Self::List(Box::new(ty)))
-			}
+			},
 			Token::Tuple => {
-				let types =
-					parse_list(tokens, Token::LessThan, Token::GreaterThan, Some(Token::Comma))?;
+				let types = parse_list(
+					tokens,
+					Token::LessThan,
+					Token::GreaterThan,
+					Some(Token::Comma),
+				)?;
 
 				Ok(Self::Tuple(types))
-			}
+			},
 			Token::Option => {
 				tokens.expect(Token::LessThan)?;
 				let ty = Type::parse(tokens)?;
 				tokens.expect(Token::GreaterThan)?;
 
 				Ok(Self::Option(Box::new(ty)))
-			}
+			},
 			Token::Result => {
 				let mut ok = None;
 				let mut err = None;
@@ -420,22 +462,23 @@ impl<'a> FromTokens<'a> for Type {
 				};
 
 				Ok(Self::Result { ok, err })
-			}
+			},
 			Token::Ident => Ok(Self::Id(span)),
-			found => Err(Error::unexpected_token(span, Token::TYPE_KEYWORD, found)),
+			found => {
+				Err(Error::unexpected_token(span, Token::TYPE_KEYWORD, found))
+			},
 		}
 	}
 }
 
 fn parse_list<'a, O>(
-	tokens: &mut Tokens<'a>,
-	start: Token,
-	end: Token,
-	sep: Option<Token>,
+	tokens:&mut Tokens<'a>,
+	start:Token,
+	end:Token,
+	sep:Option<Token>,
 ) -> Result<Vec<O>>
 where
-	O: FromTokens<'a>,
-{
+	O: FromTokens<'a>, {
 	tokens.expect(start)?;
 
 	let mut items = Vec::new();
@@ -460,10 +503,12 @@ where
 	Ok(items)
 }
 
-fn parse_docs(tokens: &mut Tokens) -> Vec<Span> {
+fn parse_docs(tokens:&mut Tokens) -> Vec<Span> {
 	let mut spans = Vec::new();
 
-	while let Some((Ok(Token::DocComment | Token::BlockDocComment), span)) = tokens.peek() {
+	while let Some((Ok(Token::DocComment | Token::BlockDocComment), span)) =
+		tokens.peek()
+	{
 		spans.push(span.clone());
 
 		tokens.next();
@@ -474,9 +519,10 @@ fn parse_docs(tokens: &mut Tokens) -> Vec<Span> {
 
 #[cfg(test)]
 mod test {
-	use super::*;
 	use logos::Lexer;
 	use pretty_assertions::assert_eq;
+
+	use super::*;
 
 	#[test]
 	fn feature() -> Result<()> {
@@ -508,7 +554,10 @@ mod test {
 
 		assert_eq!(
 			ty,
-			Type::Result { ok: Some(Box::new(Type::U8)), err: Some(Box::new(Type::String)) }
+			Type::Result {
+				ok:Some(Box::new(Type::U8)),
+				err:Some(Box::new(Type::String))
+			}
 		);
 
 		Ok(())
@@ -520,22 +569,26 @@ mod test {
 
 		let ty = Type::parse(&mut tokens)?;
 
-		assert_eq!(ty, Type::Result { ok: None, err: Some(Box::new(Type::String)) });
+		assert_eq!(
+			ty,
+			Type::Result { ok:None, err:Some(Box::new(Type::String)) }
+		);
 
 		Ok(())
 	}
 
 	#[test]
 	fn typedef_() -> Result<()> {
-		let mut tokens = Lexer::new("type foo = result<u8, string>").spanned().peekable();
+		let mut tokens =
+			Lexer::new("type foo = result<u8, string>").spanned().peekable();
 
 		let ty = InterfaceItem::parse(&mut tokens)?;
 
 		assert_eq!(
 			ty.inner,
 			InterfaceItemInner::Alias(Type::Result {
-				ok: Some(Box::new(Type::U8)),
-				err: Some(Box::new(Type::String))
+				ok:Some(Box::new(Type::U8)),
+				err:Some(Box::new(Type::String))
 			})
 		);
 

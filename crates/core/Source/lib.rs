@@ -1,12 +1,21 @@
-use proc_macro2::TokenStream;
 use std::{collections::HashMap, ops::Index, path::PathBuf};
+
+use proc_macro2::TokenStream;
 use wit_parser::{
-	FlagsField, Function, FunctionResult, Int, Interface, Type, TypeDefArena, TypeDefId,
-	TypeDefKind, UnionCase,
+	FlagsField,
+	Function,
+	FunctionResult,
+	Int,
+	Interface,
+	Type,
+	TypeDefArena,
+	TypeDefId,
+	TypeDefKind,
+	UnionCase,
 };
 
 pub trait GeneratorBuilder {
-	fn build(self, interface: Interface) -> Box<dyn Generate>;
+	fn build(self, interface:Interface) -> Box<dyn Generate>;
 }
 
 pub trait Generate {
@@ -24,22 +33,26 @@ use std::{
 
 /// # Errors
 ///
-/// Returns an error when the underlying postprocess command didn't finish successfully
+/// Returns an error when the underlying postprocess command didn't finish
+/// successfully
 ///
 /// # Panics
 ///
-/// Attempts to take the stdin and stdout pipes from the spawned child, will panic otherwise
+/// Attempts to take the stdin and stdout pipes from the spawned child, will
+/// panic otherwise
 pub fn postprocess<I, S>(
-	file: &mut String,
-	cmd: impl AsRef<OsStr>,
-	args: I,
+	file:&mut String,
+	cmd:impl AsRef<OsStr>,
+	args:I,
 ) -> Result<(), Box<dyn std::error::Error>>
 where
 	I: IntoIterator<Item = S>,
-	S: AsRef<OsStr>,
-{
-	let mut child =
-		Command::new(cmd).args(args).stdin(Stdio::piped()).stdout(Stdio::piped()).spawn()?;
+	S: AsRef<OsStr>, {
+	let mut child = Command::new(cmd)
+		.args(args)
+		.stdin(Stdio::piped())
+		.stdout(Stdio::piped())
+		.spawn()?;
 	child.stdin.take().unwrap().write_all(file.as_bytes())?;
 	file.truncate(0);
 	child.stdout.take().unwrap().read_to_string(file)?;
@@ -65,14 +78,14 @@ bitflags::bitflags! {
 
 #[derive(Debug, Default)]
 pub struct TypeInfos {
-	infos: HashMap<TypeDefId, TypeInfo>,
+	infos:HashMap<TypeDefId, TypeInfo>,
 }
 
 impl TypeInfos {
 	#[must_use]
 	pub fn collect_from_functions<'a>(
-		typedefs: &TypeDefArena,
-		functions: impl Iterator<Item = &'a Function>,
+		typedefs:&TypeDefArena,
+		functions:impl Iterator<Item = &'a Function>,
 	) -> Self {
 		let mut this = Self::default();
 
@@ -84,13 +97,13 @@ impl TypeInfos {
 			match &func.result {
 				Some(FunctionResult::Anon(ty)) => {
 					this.collect_type_info(typedefs, ty, TypeInfo::RESULT);
-				}
+				},
 				Some(FunctionResult::Named(results)) => {
 					for (_, ty) in results {
 						this.collect_type_info(typedefs, ty, TypeInfo::RESULT);
 					}
-				}
-				None => {}
+				},
+				None => {},
 			}
 		}
 
@@ -103,34 +116,36 @@ impl TypeInfos {
 
 	fn collect_typedef_info(
 		&mut self,
-		typedefs: &TypeDefArena,
-		id: TypeDefId,
-		base_info: TypeInfo,
+		typedefs:&TypeDefArena,
+		id:TypeDefId,
+		base_info:TypeInfo,
 	) -> TypeInfo {
 		let mut info = base_info;
 
 		match &typedefs[id].kind {
 			TypeDefKind::Alias(ty) => {
 				info |= self.collect_type_info(typedefs, ty, base_info);
-			}
+			},
 			TypeDefKind::Record(fields) => {
 				for field in fields {
-					info |= self.collect_type_info(typedefs, &field.ty, base_info);
+					info |=
+						self.collect_type_info(typedefs, &field.ty, base_info);
 				}
-			}
+			},
 			TypeDefKind::Variant(cases) => {
 				for case in cases {
 					if let Some(ty) = &case.ty {
 						info |= self.collect_type_info(typedefs, ty, base_info);
 					}
 				}
-			}
+			},
 			TypeDefKind::Union(cases) => {
 				for case in cases {
-					info |= self.collect_type_info(typedefs, &case.ty, base_info);
+					info |=
+						self.collect_type_info(typedefs, &case.ty, base_info);
 				}
-			}
-			_ => {}
+			},
+			_ => {},
 		}
 
 		log::debug!("collected info for {:?}: {:?}", typedefs[id].ident, info,);
@@ -142,13 +157,16 @@ impl TypeInfos {
 
 	fn collect_type_info(
 		&mut self,
-		typedefs: &TypeDefArena,
-		ty: &Type,
-		base_info: TypeInfo,
+		typedefs:&TypeDefArena,
+		ty:&Type,
+		base_info:TypeInfo,
 	) -> TypeInfo {
 		match ty {
 			Type::String => base_info | TypeInfo::HAS_LIST,
-			Type::List(ty) => self.collect_type_info(typedefs, ty, base_info) | TypeInfo::HAS_LIST,
+			Type::List(ty) => {
+				self.collect_type_info(typedefs, ty, base_info)
+					| TypeInfo::HAS_LIST
+			},
 			Type::Option(ty) => self.collect_type_info(typedefs, ty, base_info),
 			Type::Tuple(types) => {
 				let mut info = base_info;
@@ -156,7 +174,7 @@ impl TypeInfos {
 					info |= self.collect_type_info(typedefs, ty, base_info);
 				}
 				info
-			}
+			},
 			Type::Result { ok, err } => {
 				let mut info = base_info;
 				if let Some(ty) = &ok {
@@ -166,8 +184,10 @@ impl TypeInfos {
 					info |= self.collect_type_info(typedefs, ty, base_info);
 				}
 				info
-			}
-			Type::Id(id) => base_info | self.collect_typedef_info(typedefs, *id, base_info),
+			},
+			Type::Id(id) => {
+				base_info | self.collect_typedef_info(typedefs, *id, base_info)
+			},
 			_ => base_info,
 		}
 	}
@@ -176,16 +196,14 @@ impl TypeInfos {
 impl Index<TypeDefId> for TypeInfos {
 	type Output = TypeInfo;
 
-	fn index(&self, id: TypeDefId) -> &Self::Output {
-		&self.infos[&id]
-	}
+	fn index(&self, id:TypeDefId) -> &Self::Output { &self.infos[&id] }
 }
 
 /// # Panics
 ///
 /// Panics if the number of flags field is larger than 64
 #[must_use]
-pub fn flags_repr(fields: &[FlagsField]) -> Int {
+pub fn flags_repr(fields:&[FlagsField]) -> Int {
 	match fields.len() {
 		n if n <= 8 => Int::U8,
 		n if n <= 16 => Int::U16,
@@ -195,7 +213,7 @@ pub fn flags_repr(fields: &[FlagsField]) -> Int {
 	}
 }
 
-fn type_ident(typedefs: &TypeDefArena, ty: &Type) -> String {
+fn type_ident(typedefs:&TypeDefArena, ty:&Type) -> String {
 	match ty {
 		Type::Bool => "Bool".to_string(),
 		Type::U8 => "U8".to_string(),
@@ -216,24 +234,30 @@ fn type_ident(typedefs: &TypeDefArena, ty: &Type) -> String {
 		Type::Tuple(_) => "Tuple".to_string(),
 		Type::Option(ty) => format!("Optional{}", type_ident(typedefs, ty)),
 		Type::Result { .. } => "Result".to_string(),
-		Type::Id(id) => match &typedefs[*id].kind {
-			TypeDefKind::Alias(ty) => type_ident(typedefs, ty),
-			TypeDefKind::Record(_) => "Record".to_string(),
-			TypeDefKind::Flags(_) => "Flags".to_string(),
-			TypeDefKind::Variant(_) => "Variant".to_string(),
-			TypeDefKind::Enum(_) => "Enum".to_string(),
-			TypeDefKind::Union(_) => "Union".to_string(),
-			TypeDefKind::Resource(_) => "Resource".to_string(),
+		Type::Id(id) => {
+			match &typedefs[*id].kind {
+				TypeDefKind::Alias(ty) => type_ident(typedefs, ty),
+				TypeDefKind::Record(_) => "Record".to_string(),
+				TypeDefKind::Flags(_) => "Flags".to_string(),
+				TypeDefKind::Variant(_) => "Variant".to_string(),
+				TypeDefKind::Enum(_) => "Enum".to_string(),
+				TypeDefKind::Union(_) => "Union".to_string(),
+				TypeDefKind::Resource(_) => "Resource".to_string(),
+			}
 		},
 	}
 }
 
 #[must_use]
-pub fn union_case_names(typedefs: &TypeDefArena, cases: &[UnionCase]) -> Vec<String> {
+pub fn union_case_names(
+	typedefs:&TypeDefArena,
+	cases:&[UnionCase],
+) -> Vec<String> {
 	enum UsedState<'a> {
 		/// This name has been used once before.
 		///
-		/// Contains a reference to the name given to the first usage so that a suffix can be added to it.
+		/// Contains a reference to the name given to the first usage so that a
+		/// suffix can be added to it.
 		Once(&'a mut String),
 		/// This name has already been used multiple times.
 		///
@@ -250,26 +274,29 @@ pub fn union_case_names(typedefs: &TypeDefArena, cases: &[UnionCase]) -> Vec<Str
 
 		match used.get_mut(name.as_str()) {
 			None => {
-				// Initialise this name's `UsedState`, with a mutable reference to this name
-				// in case we have to add a suffix to it later.
+				// Initialise this name's `UsedState`, with a mutable reference
+				// to this name in case we have to add a suffix to it later.
 				used.insert(name.clone(), UsedState::Once(name));
-				// Since this is the first (and potentially only) usage of this name,
-				// we don't need to add a suffix here.
-			}
-			Some(state) => match state {
-				UsedState::Multiple(n) => {
-					// Add a suffix of the index of this usage.
-					name.push_str(&n.to_string());
-					// Add one to the number of times this type has been used.
-					*n += 1;
-				}
-				UsedState::Once(first) => {
-					// Add a suffix of 0 to the first usage.
-					first.push('0');
-					// We now get a suffix of 1.
-					name.push('1');
-					// Then update the state.
-					*state = UsedState::Multiple(2);
+				// Since this is the first (and potentially only) usage of this
+				// name, we don't need to add a suffix here.
+			},
+			Some(state) => {
+				match state {
+					UsedState::Multiple(n) => {
+						// Add a suffix of the index of this usage.
+						name.push_str(&n.to_string());
+						// Add one to the number of times this type has been
+						// used.
+						*n += 1;
+					},
+					UsedState::Once(first) => {
+						// Add a suffix of 0 to the first usage.
+						first.push('0');
+						// We now get a suffix of 1.
+						name.push('1');
+						// Then update the state.
+						*state = UsedState::Multiple(2);
+					},
 				}
 			},
 		}

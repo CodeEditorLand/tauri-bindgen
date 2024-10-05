@@ -15,20 +15,21 @@ use wit_parser::{Function, Interface, TypeDefKind};
 pub struct Builder {
 	/// Whether or not `rustfmt` is executed to format generated code.
 	#[cfg_attr(feature = "clap", clap(long))]
-	pub fmt: bool,
+	pub fmt:bool,
 
 	/// Whether or not the bindings assume interface values are always
 	/// well-formed or whether checks are performed.
 	#[cfg_attr(feature = "clap", clap(long))]
-	pub unchecked: bool,
+	pub unchecked:bool,
 
-	/// If true, code generation should avoid any features that depend on `std`.
+	/// If true, code generation should avoid any features that depend on
+	/// `std`.
 	#[cfg_attr(feature = "clap", clap(long))]
-	pub no_std: bool,
+	pub no_std:bool,
 }
 
 impl GeneratorBuilder for Builder {
-	fn build(self, interface: Interface) -> Box<dyn Generate> {
+	fn build(self, interface:Interface) -> Box<dyn Generate> {
 		let methods = interface
 			.typedefs
 			.iter()
@@ -46,19 +47,29 @@ impl GeneratorBuilder for Builder {
 			interface.functions.iter().chain(methods),
 		);
 
-		Box::new(RustWasm { opts: self, interface, infos })
+		Box::new(RustWasm { opts:self, interface, infos })
 	}
 }
 
 pub struct RustWasm {
-	opts: Builder,
-	interface: Interface,
-	infos: TypeInfos,
+	opts:Builder,
+	interface:Interface,
+	infos:TypeInfos,
 }
 
 impl RustWasm {
-	pub fn print_function(&self, mod_ident: &str, func: &Function) -> TokenStream {
-		let sig = FnSig { async_: true, unsafe_: false, private: false, self_arg: None, func };
+	pub fn print_function(
+		&self,
+		mod_ident:&str,
+		func:&Function,
+	) -> TokenStream {
+		let sig = FnSig {
+			async_:true,
+			unsafe_:false,
+			private:false,
+			self_arg:None,
+			func,
+		};
 
 		let sig = self.print_function_signature(
 			&sig,
@@ -68,7 +79,8 @@ impl RustWasm {
 
 		let ident = func.id.to_snake_case();
 
-		let param_idents = func.params.iter().map(|(ident, _)| format_ident!("{}", ident));
+		let param_idents =
+			func.params.iter().map(|(ident, _)| format_ident!("{}", ident));
 
 		quote! {
 			#sig {
@@ -79,15 +91,15 @@ impl RustWasm {
 }
 
 impl RustGenerator for RustWasm {
-	fn interface(&self) -> &Interface {
-		&self.interface
-	}
+	fn interface(&self) -> &Interface { &self.interface }
 
-	fn infos(&self) -> &TypeInfos {
-		&self.infos
-	}
+	fn infos(&self) -> &TypeInfos { &self.infos }
 
-	fn additional_attrs(&self, ident: &str, info: TypeInfo) -> Option<TokenStream> {
+	fn additional_attrs(
+		&self,
+		ident:&str,
+		info:TypeInfo,
+	) -> Option<TokenStream> {
 		let mut attrs = vec![];
 		if self.uses_two_names(info) {
 			if ident.ends_with("Param") {
@@ -113,11 +125,11 @@ impl RustGenerator for RustWasm {
 
 	fn print_resource(
 		&self,
-		mod_ident: &str,
-		docs: &str,
-		ident: &proc_macro2::Ident,
-		functions: &[Function],
-		info: TypeInfo,
+		mod_ident:&str,
+		docs:&str,
+		ident:&proc_macro2::Ident,
+		functions:&[Function],
+		info:TypeInfo,
 	) -> TokenStream {
 		let docs = self.print_docs(docs);
 		let additional_attrs = self.additional_attrs(&ident.to_string(), info);
@@ -174,11 +186,9 @@ impl tauri_bindgen_core::Generate for RustWasm {
 			&BorrowMode::AllBorrowed(parse_quote!('a)),
 		);
 
-		let functions = self
-			.interface
-			.functions
-			.iter()
-			.map(|func| self.print_function(&self.interface.ident.to_snake_case(), func));
+		let functions = self.interface.functions.iter().map(|func| {
+			self.print_function(&self.interface.ident.to_snake_case(), func)
+		});
 
 		quote! {
 			#docs

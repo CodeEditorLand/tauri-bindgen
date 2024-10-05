@@ -1,8 +1,15 @@
 #![allow(clippy::must_use_candidate, clippy::unused_self)]
 
-use heck::{ToKebabCase, ToLowerCamelCase, ToSnakeCase, ToUpperCamelCase};
 use std::{fmt::Write, path::PathBuf};
-use tauri_bindgen_core::{postprocess, Generate, GeneratorBuilder, TypeInfo, TypeInfos};
+
+use heck::{ToKebabCase, ToLowerCamelCase, ToSnakeCase, ToUpperCamelCase};
+use tauri_bindgen_core::{
+	postprocess,
+	Generate,
+	GeneratorBuilder,
+	TypeInfo,
+	TypeInfos,
+};
 use tauri_bindgen_gen_js::{JavaScriptGenerator, SerdeUtils};
 use wit_parser::{Function, FunctionResult, Interface, Type, TypeDefKind};
 
@@ -13,16 +20,18 @@ use wit_parser::{Function, FunctionResult, Interface, Type, TypeDefKind};
         .args(&["prettier", "romefmt"]),
 )))]
 pub struct Builder {
-	/// Run `prettier` to format the generated code. This requires a global installation of `prettier`.
+	/// Run `prettier` to format the generated code. This requires a global
+	/// installation of `prettier`.
 	#[cfg_attr(feature = "clap", clap(long))]
-	pub prettier: bool,
-	/// Run `rome format` to format the generated code. This formatter is much faster than `prettier`. Requires a global installation of `rome`.
+	pub prettier:bool,
+	/// Run `rome format` to format the generated code. This formatter is much
+	/// faster than `prettier`. Requires a global installation of `rome`.
 	#[cfg_attr(feature = "clap", clap(long))]
-	pub romefmt: bool,
+	pub romefmt:bool,
 }
 
 impl GeneratorBuilder for Builder {
-	fn build(self, interface: Interface) -> Box<dyn Generate> {
+	fn build(self, interface:Interface) -> Box<dyn Generate> {
 		let methods = interface
 			.typedefs
 			.iter()
@@ -40,23 +49,25 @@ impl GeneratorBuilder for Builder {
 			interface.functions.iter().chain(methods),
 		);
 
-		let serde_utils =
-			SerdeUtils::collect_from_functions(&interface.typedefs, &interface.functions);
+		let serde_utils = SerdeUtils::collect_from_functions(
+			&interface.typedefs,
+			&interface.functions,
+		);
 
-		Box::new(JavaScript { opts: self, interface, infos, serde_utils })
+		Box::new(JavaScript { opts:self, interface, infos, serde_utils })
 	}
 }
 
 #[derive(Debug)]
 pub struct JavaScript {
-	opts: Builder,
-	interface: Interface,
-	infos: TypeInfos,
-	serde_utils: SerdeUtils,
+	opts:Builder,
+	interface:Interface,
+	infos:TypeInfos,
+	serde_utils:SerdeUtils,
 }
 
 impl JavaScript {
-	fn print_function(&self, intf_name: &str, func: &Function) -> String {
+	fn print_function(&self, intf_name:&str, func:&Function) -> String {
 		let docs = self.print_docs(func);
 		let ident = func.id.to_lower_camel_case();
 		let name = func.id.to_snake_case();
@@ -71,7 +82,9 @@ impl JavaScript {
 		let serialize_params = func
 			.params
 			.iter()
-			.map(|(ident, ty)| self.print_serialize_ty(&ident.to_lower_camel_case(), ty))
+			.map(|(ident, ty)| {
+				self.print_serialize_ty(&ident.to_lower_camel_case(), ty)
+			})
 			.collect::<Vec<_>>()
 			.join(";\n");
 
@@ -90,11 +103,11 @@ export async function {ident} ({params}) {{
 
 	fn print_resource(
 		&self,
-		mod_ident: &str,
-		docs: &str,
-		ident: &str,
-		functions: &[Function],
-		info: TypeInfo,
+		mod_ident:&str,
+		docs:&str,
+		ident:&str,
+		functions:&[Function],
+		info:TypeInfo,
 	) -> String {
 		let ident = ident.to_upper_camel_case();
 
@@ -157,37 +170,40 @@ async {ident} ({params}) {{
 		)
 	}
 
-	fn print_docs(&self, func: &Function) -> String {
+	fn print_docs(&self, func:&Function) -> String {
 		let docs = func.docs.lines().fold(String::new(), |mut str, line| {
 			let _ = writeln!(str, " * {line} \n");
 			str
 		});
 
-		let param_docs = func.params.iter().fold(String::new(), |mut str, (name, ty)| {
-			let ident = &name.to_lower_camel_case();
-			let ty = self.print_ty(ty);
+		let param_docs =
+			func.params.iter().fold(String::new(), |mut str, (name, ty)| {
+				let ident = &name.to_lower_camel_case();
+				let ty = self.print_ty(ty);
 
-			let _ = writeln!(str, "* @param {{{ty}}} {ident}");
+				let _ = writeln!(str, "* @param {{{ty}}} {ident}");
 
-			str
-		});
+				str
+			});
 
 		let result_docs = func
 			.result
 			.as_ref()
-			.map(|result| match result {
-				FunctionResult::Anon(ty) => {
-					let ty = self.print_ty(ty);
-					format!("* @returns {{Promise<{ty}>}} \n")
-				}
-				FunctionResult::Named(types) => {
-					let types = types
-						.iter()
-						.map(|(_, ty)| self.print_ty(ty))
-						.collect::<Vec<_>>()
-						.join(", ");
+			.map(|result| {
+				match result {
+					FunctionResult::Anon(ty) => {
+						let ty = self.print_ty(ty);
+						format!("* @returns {{Promise<{ty}>}} \n")
+					},
+					FunctionResult::Named(types) => {
+						let types = types
+							.iter()
+							.map(|(_, ty)| self.print_ty(ty))
+							.collect::<Vec<_>>()
+							.join(", ");
 
-					format!("* @returns {{Promise<[{types}]>}} \n")
+						format!("* @returns {{Promise<[{types}]>}} \n")
+					},
 				}
 			})
 			.unwrap_or_default();
@@ -195,7 +211,7 @@ async {ident} ({params}) {{
 		format!("/**\n{docs}{param_docs}{result_docs}*/")
 	}
 
-	fn print_ty(&self, ty: &Type) -> String {
+	fn print_ty(&self, ty:&Type) -> String {
 		match ty {
 			Type::Bool => "boolean".to_string(),
 			Type::U8
@@ -206,33 +222,44 @@ async {ident} ({params}) {{
 			| Type::S32
 			| Type::Float32
 			| Type::Float64 => "number".to_string(),
-			Type::U64 | Type::S64 | Type::U128 | Type::S128 => "bigint".to_string(),
+			Type::U64 | Type::S64 | Type::U128 | Type::S128 => {
+				"bigint".to_string()
+			},
 			Type::Char | Type::String => "string".to_string(),
 			Type::Tuple(types) => {
-				let types = types.iter().map(|ty| self.print_ty(ty)).collect::<Vec<_>>().join(", ");
+				let types = types
+					.iter()
+					.map(|ty| self.print_ty(ty))
+					.collect::<Vec<_>>()
+					.join(", ");
 
 				format!("[{types}]")
-			}
+			},
 			Type::List(ty) => {
 				let ty = self.array_ty(ty).unwrap_or(self.print_ty(ty));
 				format!("{ty}[]")
-			}
+			},
 			Type::Option(ty) => {
 				let ty = self.print_ty(ty);
 
 				format!("{ty} | null")
-			}
+			},
 			Type::Result { ok, err } => {
-				let ok = ok.as_ref().map_or("_".to_string(), |ty| self.print_ty(ty));
-				let err = err.as_ref().map_or("_".to_string(), |ty| self.print_ty(ty));
+				let ok =
+					ok.as_ref().map_or("_".to_string(), |ty| self.print_ty(ty));
+				let err = err
+					.as_ref()
+					.map_or("_".to_string(), |ty| self.print_ty(ty));
 
 				format!("Result<{ok}, {err}>")
-			}
-			Type::Id(id) => self.interface.typedefs[*id].ident.to_upper_camel_case(),
+			},
+			Type::Id(id) => {
+				self.interface.typedefs[*id].ident.to_upper_camel_case()
+			},
 		}
 	}
 
-	fn array_ty(&self, ty: &Type) -> Option<String> {
+	fn array_ty(&self, ty:&Type) -> Option<String> {
 		match ty {
 			Type::U8 => Some("Uint8Array".to_string()),
 			Type::S8 => Some("Int8Array".to_string()),
@@ -244,9 +271,11 @@ async {ident} ({params}) {{
 			Type::S64 => Some("BigInt64Array".to_string()),
 			Type::Float32 => Some("Float32Array".to_string()),
 			Type::Float64 => Some("Float64Array".to_string()),
-			Type::Id(id) => match &self.interface.typedefs[*id].kind {
-				TypeDefKind::Alias(t) => self.array_ty(t),
-				_ => None,
+			Type::Id(id) => {
+				match &self.interface.typedefs[*id].kind {
+					TypeDefKind::Alias(t) => self.array_ty(t),
+					_ => None,
+				}
 			},
 			Type::U128
 			| Type::S128
@@ -262,18 +291,14 @@ async {ident} ({params}) {{
 }
 
 impl JavaScriptGenerator for JavaScript {
-	fn interface(&self) -> &Interface {
-		&self.interface
-	}
+	fn interface(&self) -> &Interface { &self.interface }
 
-	fn infos(&self) -> &TypeInfos {
-		&self.infos
-	}
+	fn infos(&self) -> &TypeInfos { &self.infos }
 }
 
 impl Generate for JavaScript {
 	fn to_file(&mut self) -> (std::path::PathBuf, String) {
-		let deserializers: String = self
+		let deserializers:String = self
 			.interface
 			.typedefs
 			.iter()
@@ -288,7 +313,7 @@ impl Generate for JavaScript {
 			})
 			.collect();
 
-		let serializers: String = self
+		let serializers:String = self
 			.interface
 			.typedefs
 			.iter()
@@ -303,14 +328,16 @@ impl Generate for JavaScript {
 			})
 			.collect();
 
-		let functions: String = self
+		let functions:String = self
 			.interface
 			.functions
 			.iter()
-			.map(|func| self.print_function(&self.interface.ident.to_snake_case(), func))
+			.map(|func| {
+				self.print_function(&self.interface.ident.to_snake_case(), func)
+			})
 			.collect();
 
-		let resources: String = self
+		let resources:String = self
 			.interface
 			.typedefs
 			.iter()
@@ -332,15 +359,21 @@ impl Generate for JavaScript {
 
 		let serde_utils = self.serde_utils.to_string();
 
-		let mut contents =
-			format!("{serde_utils}{deserializers}{serializers}\n{functions}\n{resources}");
+		let mut contents = format!(
+			"{serde_utils}{deserializers}{serializers}\n{functions}\\
+			 n{resources}"
+		);
 
 		if self.opts.prettier {
 			postprocess(&mut contents, "prettier", ["--parser=babel"])
 				.expect("failed to run `prettier`");
 		} else if self.opts.romefmt {
-			postprocess(&mut contents, "rome", ["format", "--stdin-file-path", "index.js"])
-				.expect("failed to run `rome format`");
+			postprocess(
+				&mut contents,
+				"rome",
+				["format", "--stdin-file-path", "index.js"],
+			)
+			.expect("failed to run `rome format`");
 		}
 
 		let mut filename = PathBuf::from(self.interface.ident.to_kebab_case());
@@ -350,6 +383,10 @@ impl Generate for JavaScript {
 	}
 }
 
-fn print_function_params(params: &[(String, Type)]) -> String {
-	params.iter().map(|(name, _)| name.to_lower_camel_case()).collect::<Vec<_>>().join(", ")
+fn print_function_params(params:&[(String, Type)]) -> String {
+	params
+		.iter()
+		.map(|(name, _)| name.to_lower_camel_case())
+		.collect::<Vec<_>>()
+		.join(", ")
 }

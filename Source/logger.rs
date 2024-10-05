@@ -1,8 +1,9 @@
-use env_logger::fmt::Color;
-use log::{log_enabled, Level};
 use std::io::Write;
 
-pub fn init(verbosity: u8) {
+use env_logger::fmt::Color;
+use log::{log_enabled, Level};
+
+pub fn init(verbosity:u8) {
 	let mut builder = env_logger::Builder::from_default_env();
 
 	builder
@@ -23,7 +24,11 @@ pub fn init(verbosity: u8) {
 				let mut level_style = f.default_level_style(record.level());
 				level_style.set_bold(true);
 
-				write!(f, "{:>12} ", level_style.value(prettyprint_level(record.level())))?;
+				write!(
+					f,
+					"{:>12} ",
+					level_style.value(prettyprint_level(record.level()))
+				)?;
 			}
 
 			if !is_command_output && log_enabled!(Level::Debug) {
@@ -39,7 +44,7 @@ pub fn init(verbosity: u8) {
 }
 
 /// This maps the occurrence of `--verbose` flags to the correct log level
-fn verbosity_level(num: u8) -> Level {
+fn verbosity_level(num:u8) -> Level {
 	match num {
 		0 => Level::Info,
 		1 => Level::Debug,
@@ -47,8 +52,9 @@ fn verbosity_level(num: u8) -> Level {
 	}
 }
 
-/// The default string representation for `Level` is all uppercaps which doesn't mix well with the other printed actions.
-fn prettyprint_level(lvl: Level) -> &'static str {
+/// The default string representation for `Level` is all uppercaps which doesn't
+/// mix well with the other printed actions.
+fn prettyprint_level(lvl:Level) -> &'static str {
 	match lvl {
 		Level::Error => "Error",
 		Level::Warn => "Warn",

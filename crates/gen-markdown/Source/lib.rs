@@ -1,5 +1,6 @@
-use heck::{ToKebabCase, ToSnakeCase};
 use std::{fmt::Write, path::PathBuf};
+
+use heck::{ToKebabCase, ToSnakeCase};
 use tauri_bindgen_core::{Generate, GeneratorBuilder};
 use wit_parser::{Function, FunctionResult, Interface, Type, TypeDefId};
 
@@ -10,18 +11,18 @@ pub struct Builder {
 }
 
 impl GeneratorBuilder for Builder {
-	fn build(self, interface: Interface) -> Box<dyn Generate> {
-		Box::new(Markdown { _opts: self, interface })
+	fn build(self, interface:Interface) -> Box<dyn Generate> {
+		Box::new(Markdown { _opts:self, interface })
 	}
 }
 
 pub struct Markdown {
-	_opts: Builder,
-	interface: Interface,
+	_opts:Builder,
+	interface:Interface,
 }
 
 impl Markdown {
-	fn print_ty(&self, ty: &Type) -> String {
+	fn print_ty(&self, ty:&Type) -> String {
 		match ty {
 			Type::Bool => "bool".to_string(),
 			Type::U8 => "u8".to_string(),
@@ -41,31 +42,38 @@ impl Markdown {
 			Type::List(ty) => {
 				let ty = self.print_ty(ty);
 				format!("list<{ty}>")
-			}
+			},
 			Type::Tuple(types) => {
-				let types = types.iter().map(|ty| self.print_ty(ty)).collect::<Vec<_>>().join(", ");
+				let types = types
+					.iter()
+					.map(|ty| self.print_ty(ty))
+					.collect::<Vec<_>>()
+					.join(", ");
 				format!("tuple<{types}>")
-			}
+			},
 			Type::Option(ty) => {
 				let ty = self.print_ty(ty);
 				format!("option<{ty}>")
-			}
+			},
 			Type::Result { ok, err } => {
-				let ok = ok.as_ref().map_or("_".to_string(), |ty| self.print_ty(ty));
-				let err = err.as_ref().map_or("_".to_string(), |ty| self.print_ty(ty));
+				let ok =
+					ok.as_ref().map_or("_".to_string(), |ty| self.print_ty(ty));
+				let err = err
+					.as_ref()
+					.map_or("_".to_string(), |ty| self.print_ty(ty));
 
 				format!("result<{ok}, {err}>")
-			}
+			},
 			Type::Id(id) => {
 				let ident = &self.interface.typedefs[*id].ident;
 				let lnk = ident.to_snake_case();
 
 				format!("[{ident}](#{lnk})")
-			}
+			},
 		}
 	}
 
-	fn print_typedef(&self, id: TypeDefId) -> String {
+	fn print_typedef(&self, id:TypeDefId) -> String {
 		let typedef = &self.interface.typedefs[id];
 		let ident = &typedef.ident;
 		let docs = print_docs(&typedef.docs);
@@ -74,108 +82,130 @@ impl Markdown {
 			wit_parser::TypeDefKind::Alias(ty) => {
 				let ty = self.print_ty(ty);
 				format!("## Alias {ident}\n\n`{ty}`\n\n{docs}")
-			}
+			},
 			wit_parser::TypeDefKind::Record(fields) => {
-				let fields = fields.iter().fold(String::new(), |mut str, field| {
-					let _ = write!(
-						str,
-						"#### {ident}: `{ty}`\n{docs}\n",
-						ident = field.id,
-						ty = self.print_ty(&field.ty),
-						docs = field.docs
-					);
+				let fields =
+					fields.iter().fold(String::new(), |mut str, field| {
+						let _ = write!(
+							str,
+							"#### {ident}: `{ty}`\n{docs}\n",
+							ident = field.id,
+							ty = self.print_ty(&field.ty),
+							docs = field.docs
+						);
 
-					str
-				});
+						str
+					});
 
 				format!("## Struct {ident}\n\n{docs}\n\n### Fields\n\n{fields}")
-			}
+			},
 			wit_parser::TypeDefKind::Flags(fields) => {
-				let fields = fields.iter().fold(String::new(), |mut str, field| {
-					let _ =
-						write!(str, "#### {ident}\n{docs}\n", ident = field.id, docs = field.docs);
+				let fields =
+					fields.iter().fold(String::new(), |mut str, field| {
+						let _ = write!(
+							str,
+							"#### {ident}\n{docs}\n",
+							ident = field.id,
+							docs = field.docs
+						);
 
-					str
-				});
+						str
+					});
 
 				format!("## Flags {ident}\n\n{docs}\n\n### Fields\n\n{fields}")
-			}
+			},
 			wit_parser::TypeDefKind::Variant(cases) => {
-				let cases = cases.iter().fold(String::new(), |mut str, case| {
-					let _ = write!(
-						str,
-						"#### {ident}{ty}\n{docs}\n",
-						ident = case.id,
-						ty = case
-							.ty
-							.as_ref()
-							.map(|ty| format!(": `{}`", self.print_ty(ty)))
-							.unwrap_or_default(),
-						docs = case.docs
-					);
+				let cases =
+					cases.iter().fold(String::new(), |mut str, case| {
+						let _ = write!(
+							str,
+							"#### {ident}{ty}\n{docs}\n",
+							ident = case.id,
+							ty = case
+								.ty
+								.as_ref()
+								.map(|ty| format!(": `{}`", self.print_ty(ty)))
+								.unwrap_or_default(),
+							docs = case.docs
+						);
 
-					str
-				});
+						str
+					});
 
 				format!("## Variant {ident}\n\n{docs}\n\n### Cases\n\n{cases}")
-			}
+			},
 			wit_parser::TypeDefKind::Enum(cases) => {
-				let cases = cases.iter().fold(String::new(), |mut str, case| {
-					let _ =
-						write!(str, "#### {ident}\n{docs}\n", ident = case.id, docs = case.docs);
-					str
-				});
+				let cases =
+					cases.iter().fold(String::new(), |mut str, case| {
+						let _ = write!(
+							str,
+							"#### {ident}\n{docs}\n",
+							ident = case.id,
+							docs = case.docs
+						);
+						str
+					});
 
 				format!("## Enum {ident}\n\n{docs}\n\n### Cases\n\n{cases}")
-			}
+			},
 			wit_parser::TypeDefKind::Union(cases) => {
-				let cases = cases.iter().fold(String::new(), |mut str, case| {
-					let _ = write!(
-						str,
-						"#### `{ty}`\n{docs}\n",
-						ty = self.print_ty(&case.ty),
-						docs = case.docs
-					);
-					str
-				});
+				let cases =
+					cases.iter().fold(String::new(), |mut str, case| {
+						let _ = write!(
+							str,
+							"#### `{ty}`\n{docs}\n",
+							ty = self.print_ty(&case.ty),
+							docs = case.docs
+						);
+						str
+					});
 
 				format!("## Union {ident}\n\n{docs}\n\n### Cases\n\n{cases}")
-			}
+			},
 			wit_parser::TypeDefKind::Resource(functions) => {
-				let functions = functions.iter().fold(String::new(), |mut str, func| {
-					let _ = write!(
-						str,
-						"### Method {ident}\n\n`func {ident} ({params}){result}`\n\n{docs}",
-						ident = func.id,
-						params = self.print_named_types(&func.params),
-						result = func
-							.result
-							.as_ref()
-							.map(|result| self.print_result(result))
-							.unwrap_or_default(),
-						docs = func.docs
-					);
+				let functions =
+					functions.iter().fold(String::new(), |mut str, func| {
+						let _ = write!(
+							str,
+							"### Method {ident}\n\n`func {ident} \
+							 ({params}){result}`\n\n{docs}",
+							ident = func.id,
+							params = self.print_named_types(&func.params),
+							result = func
+								.result
+								.as_ref()
+								.map(|result| self.print_result(result))
+								.unwrap_or_default(),
+							docs = func.docs
+						);
 
-					str
-				});
+						str
+					});
 
-				format!("## Resource {ident}\n\n{docs}\n\n### Methods\n\n{functions}")
-			}
+				format!(
+					"## Resource {ident}\n\n{docs}\n\n### \
+					 Methods\n\n{functions}"
+				)
+			},
 		}
 	}
 
-	fn print_function(&self, func: &Function) -> String {
+	fn print_function(&self, func:&Function) -> String {
 		format!(
-			"### Function {ident}\n\n` func {ident} ({params}){result}`\n\n{docs}",
+			"### Function {ident}\n\n` func {ident} \
+			 ({params}){result}`\n\n{docs}",
 			ident = func.id,
 			params = self.print_named_types(&func.params),
-			result =
-				func.result.as_ref().map(|result| self.print_result(result)).unwrap_or_default(),
+			result = func
+				.result
+				.as_ref()
+				.map(|result| self.print_result(result))
+				.unwrap_or_default(),
 			docs = func.docs
 		)
 	}
 
-	fn print_named_types(&self, types: &[(String, Type)]) -> String {
+	fn print_named_types(&self, types:&[(String, Type)]) -> String {
 		types
 			.iter()
 			.map(|(ident, ty)| format!("{ident}: {ty}", ty = self.print_ty(ty)))
@@ -183,7 +213,7 @@ impl Markdown {
 			.join(", ")
 	}
 
-	fn print_result(&self, result: &FunctionResult) -> String {
+	fn print_result(&self, result:&FunctionResult) -> String {
 		if let Some(Type::Tuple(types)) = result.types().next() {
 			if types.is_empty() {
 				return String::new();
@@ -191,15 +221,17 @@ impl Markdown {
 		}
 
 		match result {
-			FunctionResult::Anon(ty) => format!(" -> {ty}", ty = self.print_ty(ty)),
+			FunctionResult::Anon(ty) => {
+				format!(" -> {ty}", ty = self.print_ty(ty))
+			},
 			FunctionResult::Named(types) => {
 				format!(" -> ({types})", types = self.print_named_types(types))
-			}
+			},
 		}
 	}
 }
 
-fn print_docs(docs: &str) -> String {
+fn print_docs(docs:&str) -> String {
 	docs.lines().map(str::trim).collect::<Vec<_>>().join("\n")
 }
 
@@ -223,8 +255,9 @@ impl Generate for Markdown {
 			.join("\n");
 
 		let contents = format!(
-            "# {ident}\n\n{docs}\n\n## Type definitions\n\n{typedefs}\n\n## Functions\n\n{functions}",
-        );
+			"# {ident}\n\n{docs}\n\n## Type definitions\n\n{typedefs}\n\n## \
+			 Functions\n\n{functions}",
+		);
 
 		let mut filename = PathBuf::from(self.interface.ident.to_kebab_case());
 		filename.set_extension("md");
