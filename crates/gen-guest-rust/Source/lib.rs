@@ -58,18 +58,8 @@ pub struct RustWasm {
 }
 
 impl RustWasm {
-	pub fn print_function(
-		&self,
-		mod_ident:&str,
-		func:&Function,
-	) -> TokenStream {
-		let sig = FnSig {
-			async_:true,
-			unsafe_:false,
-			private:false,
-			self_arg:None,
-			func,
-		};
+	pub fn print_function(&self, mod_ident:&str, func:&Function) -> TokenStream {
+		let sig = FnSig { async_:true, unsafe_:false, private:false, self_arg:None, func };
 
 		let sig = self.print_function_signature(
 			&sig,
@@ -79,8 +69,7 @@ impl RustWasm {
 
 		let ident = func.id.to_snake_case();
 
-		let param_idents =
-			func.params.iter().map(|(ident, _)| format_ident!("{}", ident));
+		let param_idents = func.params.iter().map(|(ident, _)| format_ident!("{}", ident));
 
 		quote! {
 			#sig {
@@ -95,11 +84,7 @@ impl RustGenerator for RustWasm {
 
 	fn infos(&self) -> &TypeInfos { &self.infos }
 
-	fn additional_attrs(
-		&self,
-		ident:&str,
-		info:TypeInfo,
-	) -> Option<TokenStream> {
+	fn additional_attrs(&self, ident:&str, info:TypeInfo) -> Option<TokenStream> {
 		let mut attrs = vec![];
 		if self.uses_two_names(info) {
 			if ident.ends_with("Param") {
@@ -119,9 +104,7 @@ impl RustGenerator for RustWasm {
 		Some(quote! { #[derive(#(#attrs),*)] })
 	}
 
-	fn default_param_mode(&self) -> BorrowMode {
-		BorrowMode::AllBorrowed(parse_quote!('a))
-	}
+	fn default_param_mode(&self) -> BorrowMode { BorrowMode::AllBorrowed(parse_quote!('a)) }
 
 	fn print_resource(
 		&self,
@@ -186,9 +169,11 @@ impl tauri_bindgen_core::Generate for RustWasm {
 			&BorrowMode::AllBorrowed(parse_quote!('a)),
 		);
 
-		let functions = self.interface.functions.iter().map(|func| {
-			self.print_function(&self.interface.ident.to_snake_case(), func)
-		});
+		let functions = self
+			.interface
+			.functions
+			.iter()
+			.map(|func| self.print_function(&self.interface.ident.to_snake_case(), func));
 
 		quote! {
 			#docs

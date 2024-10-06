@@ -24,11 +24,7 @@ pub enum Error {
 /// # Panics
 ///
 /// Panics when the response returned by JavaScript is not a `ResponseObject`
-pub async fn invoke<P, R>(
-	module:&str,
-	method:&str,
-	val:&P,
-) -> Result<R, Error>
+pub async fn invoke<P, R>(module:&str, method:&str, val:&P) -> Result<R, Error>
 where
 	P: Serialize,
 	R: DeserializeOwned, {
@@ -42,8 +38,7 @@ where
 
 	let url = format!("ipc://localhost/{module}/{method}");
 
-	let request =
-		Request::new_with_str_and_init(&url, &opts).map_err(Error::JsError)?;
+	let request = Request::new_with_str_and_init(&url, &opts).map_err(Error::JsError)?;
 
 	request
 		.headers()

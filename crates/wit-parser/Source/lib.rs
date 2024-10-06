@@ -28,14 +28,9 @@ pub fn parse_and_resolve_str(
 	input:impl AsRef<str>,
 	skip:impl Fn(&str) -> bool,
 ) -> miette::Result<Interface> {
-	let iface = parse_and_resolve(input.as_ref(), skip).map_err(
-		|error:ErrReport| {
-			error.with_source_code(NamedSource::new(
-				"virtual file",
-				input.as_ref().to_string(),
-			))
-		},
-	)?;
+	let iface = parse_and_resolve(input.as_ref(), skip).map_err(|error:ErrReport| {
+		error.with_source_code(NamedSource::new("virtual file", input.as_ref().to_string()))
+	})?;
 
 	Ok(iface)
 }
@@ -48,22 +43,15 @@ pub fn parse_and_resolve_file(
 	let path = path.as_ref();
 	let input = std::fs::read_to_string(path).into_diagnostic()?;
 
-	let iface =
-		parse_and_resolve(&input, skip).map_err(|error:ErrReport| {
-			error.with_source_code(NamedSource::new(
-				path.to_string_lossy(),
-				input,
-			))
-		})?;
+	let iface = parse_and_resolve(&input, skip).map_err(|error:ErrReport| {
+		error.with_source_code(NamedSource::new(path.to_string_lossy(), input))
+	})?;
 
 	Ok(iface)
 }
 
 #[inline]
-fn parse_and_resolve(
-	input:&str,
-	skip:impl Fn(&str) -> bool,
-) -> miette::Result<Interface> {
+fn parse_and_resolve(input:&str, skip:impl Fn(&str) -> bool) -> miette::Result<Interface> {
 	let iface = parse(input, skip)?;
 
 	let (resolver, rest_data) = Resolver::new(input, iface);
@@ -71,10 +59,7 @@ fn parse_and_resolve(
 }
 
 #[inline]
-pub fn parse(
-	input:&str,
-	_skip:impl Fn(&str) -> bool,
-) -> miette::Result<parse::Interface> {
+pub fn parse(input:&str, _skip:impl Fn(&str) -> bool) -> miette::Result<parse::Interface> {
 	detect_invalid_input(input)?;
 
 	let mut tokens = lex::Token::lexer(input).spanned().peekable();
@@ -240,9 +225,7 @@ impl FunctionResult {
 	pub fn types(&self) -> ResultsTypeIter {
 		match self {
 			FunctionResult::Named(ps) => ResultsTypeIter::Named(ps.iter()),
-			FunctionResult::Anon(ty) => {
-				ResultsTypeIter::Anon(std::iter::once(ty))
-			},
+			FunctionResult::Anon(ty) => ResultsTypeIter::Anon(std::iter::once(ty)),
 		}
 	}
 }
@@ -263,10 +246,7 @@ impl<'a> Iterator for ResultsTypeIter<'a> {
 	}
 }
 
-fn serialize_typedefs<S>(
-	typedefs:&Arena<TypeDef>,
-	s:S,
-) -> std::result::Result<S::Ok, S::Error>
+fn serialize_typedefs<S>(typedefs:&Arena<TypeDef>, s:S) -> std::result::Result<S::Ok, S::Error>
 where
 	S: serde::Serializer, {
 	let mut s = s.serialize_seq(Some(typedefs.len()))?;
@@ -278,10 +258,7 @@ where
 	s.end()
 }
 
-fn serialize_id<S>(
-	id:&Id<TypeDef>,
-	serializer:S,
-) -> std::result::Result<S::Ok, S::Error>
+fn serialize_id<S>(id:&Id<TypeDef>, serializer:S) -> std::result::Result<S::Ok, S::Error>
 where
 	S: serde::Serializer, {
 	serializer.serialize_u32(u32::try_from(id.index()).unwrap())

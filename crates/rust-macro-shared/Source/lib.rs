@@ -20,10 +20,8 @@ where
 	F: Parse + Configure<B>,
 	B: GeneratorBuilder + Default, {
 	let input = syn::parse_macro_input!(input as Opts<F, B>);
-	let iface = wit_parser::parse_and_resolve_file(&input.file, |t| {
-		input.skip.contains(t)
-	})
-	.unwrap();
+	let iface =
+		wit_parser::parse_and_resolve_file(&input.file, |t| input.skip.contains(t)).unwrap();
 
 	let mut gen = input.builder.build(iface);
 	let mut tokens = gen.to_tokens();
@@ -71,10 +69,7 @@ where
 		if l.peek(token::Brace) {
 			let content;
 			syn::braced!(content in input);
-			let fields =
-				Punctuated::<ConfigField<F>, Token![,]>::parse_terminated(
-					&content,
-				)?;
+			let fields = Punctuated::<ConfigField<F>, Token![,]>::parse_terminated(&content)?;
 			for field in fields.into_pairs() {
 				match field.into_value() {
 					ConfigField::Path(path) => {
@@ -82,19 +77,13 @@ where
 						let path = parse_path(&path);
 
 						if file.replace(path).is_some() {
-							return Err(Error::new(
-								span,
-								"cannot specify second file",
-							));
+							return Err(Error::new(span, "cannot specify second file"));
 						}
 					},
 					ConfigField::Skip(skip) => {
-						ret.skip =
-							skip.iter().map(syn::LitStr::value).collect();
+						ret.skip = skip.iter().map(syn::LitStr::value).collect();
 					},
-					ConfigField::Other(other) => {
-						other.configure(&mut ret.builder)
-					},
+					ConfigField::Other(other) => other.configure(&mut ret.builder),
 				}
 			}
 		} else {
@@ -105,10 +94,7 @@ where
 		}
 
 		ret.file = file.ok_or_else(|| {
-			Error::new(
-				call_site,
-				"must specify a `*.wit` file to generate bindings for",
-			)
+			Error::new(call_site, "must specify a `*.wit` file to generate bindings for")
 		})?;
 
 		Ok(ret)
@@ -117,8 +103,7 @@ where
 
 fn parse_path(path:&syn::LitStr) -> PathBuf {
 	let path = path.value();
-	let manifest_dir =
-		PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap());
+	let manifest_dir = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap());
 	manifest_dir.join(path)
 }
 

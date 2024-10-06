@@ -140,16 +140,12 @@ fn run() -> Result<()> {
 
 			write_file(out_dir, &path, &contents)?;
 		},
-		Command::Guest(GuestGenerator::Javascript {
-			builder, world, ..
-		}) => {
+		Command::Guest(GuestGenerator::Javascript { builder, world, .. }) => {
 			let (path, contents) = gen_interface(builder, world)?;
 
 			write_file(out_dir, &path, &contents)?;
 		},
-		Command::Guest(GuestGenerator::Typescript {
-			builder, world, ..
-		}) => {
+		Command::Guest(GuestGenerator::Typescript { builder, world, .. }) => {
 			let (path, contents) = gen_interface(builder, world)?;
 
 			write_file(out_dir, &path, &contents)?;
@@ -169,19 +165,14 @@ fn run() -> Result<()> {
 				bail!("wit file `{}` does not exist", world.wit.display());
 			}
 
-			let skipset:HashSet<
-				String,
-				std::collections::hash_map::RandomState,
-			> = world.skip.into_iter().collect();
+			let skipset:HashSet<String, std::collections::hash_map::RandomState> =
+				world.skip.into_iter().collect();
 
-			let iface = wit_parser::parse_and_resolve_file(&world.wit, |t| {
-				skipset.contains(t)
-			})?;
+			let iface = wit_parser::parse_and_resolve_file(&world.wit, |t| skipset.contains(t))?;
 
 			let stdout = std::io::stdout().lock();
 			if pretty {
-				serde_json::to_writer_pretty(stdout, &iface)
-					.into_diagnostic()?;
+				serde_json::to_writer_pretty(stdout, &iface).into_diagnostic()?;
 			} else {
 				serde_json::to_writer(stdout, &iface).into_diagnostic()?;
 			}
@@ -220,8 +211,7 @@ where
 	let skipset:HashSet<String, std::collections::hash_map::RandomState> =
 		opts.skip.into_iter().collect();
 
-	let iface =
-		wit_parser::parse_and_resolve_file(&opts.wit, |t| skipset.contains(t))?;
+	let iface = wit_parser::parse_and_resolve_file(&opts.wit, |t| skipset.contains(t))?;
 
 	let mut gen = builder.build(iface);
 

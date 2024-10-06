@@ -22,15 +22,11 @@ pub trait JavaScriptGenerator {
 	fn interface(&self) -> &Interface;
 	fn infos(&self) -> &TypeInfos;
 
-	fn print_deserialize_function_result(
-		&self,
-		result:&FunctionResult,
-	) -> String {
+	fn print_deserialize_function_result(&self, result:&FunctionResult) -> String {
 		match result.len() {
 			0 => String::new(),
 			1 => {
-				let inner =
-					self.print_deserialize_ty(result.types().next().unwrap());
+				let inner = self.print_deserialize_ty(result.types().next().unwrap());
 
 				format!(
 					"
@@ -88,9 +84,7 @@ pub trait JavaScriptGenerator {
 
 				format!("[{types}]")
 			},
-			Type::List(ty) if **ty == Type::U8 => {
-				"deserializeBytes(de)".to_string()
-			},
+			Type::List(ty) if **ty == Type::U8 => "deserializeBytes(de)".to_string(),
 			Type::List(ty) => {
 				let inner = self.print_deserialize_ty(ty);
 				format!("deserializeList(de, (de) => {inner})")
@@ -110,21 +104,15 @@ pub trait JavaScriptGenerator {
 				format!("deserializeResult(de, {ok}, {err})")
 			},
 			Type::Id(id) => {
-				if let TypeDefKind::Resource(_) =
-					self.interface().typedefs[*id].kind
-				{
+				if let TypeDefKind::Resource(_) = self.interface().typedefs[*id].kind {
 					format!(
 						"{}.deserialize(de)",
-						self.interface().typedefs[*id]
-							.ident
-							.to_upper_camel_case()
+						self.interface().typedefs[*id].ident.to_upper_camel_case()
 					)
 				} else {
 					format!(
 						"deserialize{}(de)",
-						self.interface().typedefs[*id]
-							.ident
-							.to_upper_camel_case()
+						self.interface().typedefs[*id].ident.to_upper_camel_case()
 					)
 				}
 			},
@@ -137,21 +125,11 @@ pub trait JavaScriptGenerator {
 
 		match &typedef.kind {
 			TypeDefKind::Alias(ty) => self.print_deserialize_alias(ident, ty),
-			TypeDefKind::Record(fields) => {
-				self.print_deserialize_record(ident, fields)
-			},
-			TypeDefKind::Flags(fields) => {
-				self.print_deserialize_flags(ident, fields)
-			},
-			TypeDefKind::Variant(cases) => {
-				self.print_deserialize_variant(ident, cases)
-			},
-			TypeDefKind::Enum(cases) => {
-				self.print_deserialize_enum(ident, cases)
-			},
-			TypeDefKind::Union(cases) => {
-				self.print_deserialize_union(ident, cases)
-			},
+			TypeDefKind::Record(fields) => self.print_deserialize_record(ident, fields),
+			TypeDefKind::Flags(fields) => self.print_deserialize_flags(ident, fields),
+			TypeDefKind::Variant(cases) => self.print_deserialize_variant(ident, cases),
+			TypeDefKind::Enum(cases) => self.print_deserialize_enum(ident, cases),
+			TypeDefKind::Union(cases) => self.print_deserialize_union(ident, cases),
 			TypeDefKind::Resource(_) => String::new(),
 		}
 	}
@@ -166,11 +144,7 @@ pub trait JavaScriptGenerator {
 		)
 	}
 
-	fn print_deserialize_record(
-		&self,
-		ident:&str,
-		fields:&[RecordField],
-	) -> String {
+	fn print_deserialize_record(&self, ident:&str, fields:&[RecordField]) -> String {
 		let fields = fields
 			.iter()
 			.map(|field| {
@@ -190,11 +164,7 @@ pub trait JavaScriptGenerator {
 		)
 	}
 
-	fn print_deserialize_flags(
-		&self,
-		ident:&str,
-		fields:&[FlagsField],
-	) -> String {
+	fn print_deserialize_flags(&self, ident:&str, fields:&[FlagsField]) -> String {
 		let inner = match flags_repr(fields) {
 			wit_parser::Int::U8 => "U8",
 			wit_parser::Int::U16 => "U16",
@@ -210,30 +180,22 @@ pub trait JavaScriptGenerator {
 		)
 	}
 
-	fn print_deserialize_variant(
-		&self,
-		ident:&str,
-		cases:&[VariantCase],
-	) -> String {
-		let cases = cases.iter().enumerate().fold(
-			String::new(),
-			|mut str, (tag, case)| {
-				let inner = case.ty.as_ref().map_or("null".to_string(), |ty| {
-					self.print_deserialize_ty(ty)
-				});
+	fn print_deserialize_variant(&self, ident:&str, cases:&[VariantCase]) -> String {
+		let cases = cases.iter().enumerate().fold(String::new(), |mut str, (tag, case)| {
+			let inner =
+				case.ty.as_ref().map_or("null".to_string(), |ty| self.print_deserialize_ty(ty));
 
-				let ident = case.id.to_upper_camel_case();
+			let ident = case.id.to_upper_camel_case();
 
-				let _ = write!(
-					str,
-					"case {tag}:
+			let _ = write!(
+				str,
+				"case {tag}:
     return {{ {ident}: {inner} }}
 "
-				);
+			);
 
-				str
-			},
-		);
+			str
+		});
 
 		format!(
 			r#"function deserialize{ident}(de) {{
@@ -249,21 +211,18 @@ pub trait JavaScriptGenerator {
 	}
 
 	fn print_deserialize_enum(&self, ident:&str, cases:&[EnumCase]) -> String {
-		let cases = cases.iter().enumerate().fold(
-			String::new(),
-			|mut str, (tag, case)| {
-				let ident = case.id.to_upper_camel_case();
+		let cases = cases.iter().enumerate().fold(String::new(), |mut str, (tag, case)| {
+			let ident = case.id.to_upper_camel_case();
 
-				let _ = write!(
-					str,
-					"case {tag}:
+			let _ = write!(
+				str,
+				"case {tag}:
     return \"{ident}\"
 "
-				);
+			);
 
-				str
-			},
-		);
+			str
+		});
 
 		format!(
 			r#"function deserialize{ident}(de) {{
@@ -278,11 +237,7 @@ pub trait JavaScriptGenerator {
 		)
 	}
 
-	fn print_deserialize_union(
-		&self,
-		ident:&str,
-		cases:&[UnionCase],
-	) -> String {
+	fn print_deserialize_union(&self, ident:&str, cases:&[UnionCase]) -> String {
 		let cases = union_case_names(&self.interface().typedefs, cases)
 			.into_iter()
 			.zip(cases)
@@ -343,9 +298,7 @@ pub trait JavaScriptGenerator {
 				let inner = tys
 					.iter()
 					.enumerate()
-					.map(|(idx, ty)| {
-						self.print_serialize_ty(&format!("{ident}[{idx}]"), ty)
-					})
+					.map(|(idx, ty)| self.print_serialize_ty(&format!("{ident}[{idx}]"), ty))
 					.collect::<Vec<_>>()
 					.join(";");
 
@@ -357,29 +310,20 @@ pub trait JavaScriptGenerator {
 				format!("serializeOption(out, (out, v) => {inner}, {ident})")
 			},
 			Type::Result { ok, err } => {
-				let ok = ok.as_ref().map_or("{}".to_string(), |ty| {
-					self.print_serialize_ty("v", ty)
-				});
-				let err = err.as_ref().map_or("{}".to_string(), |ty| {
-					self.print_serialize_ty("v", ty)
-				});
+				let ok =
+					ok.as_ref().map_or("{}".to_string(), |ty| self.print_serialize_ty("v", ty));
+				let err =
+					err.as_ref().map_or("{}".to_string(), |ty| self.print_serialize_ty("v", ty));
 
-				format!(
-					"serializeResult(out, (out, v) => {ok}, (out, v) => \
-					 {err}, {ident})"
-				)
+				format!("serializeResult(out, (out, v) => {ok}, (out, v) => {err}, {ident})")
 			},
 			Type::Id(id) => {
-				if let TypeDefKind::Resource(_) =
-					self.interface().typedefs[*id].kind
-				{
+				if let TypeDefKind::Resource(_) = self.interface().typedefs[*id].kind {
 					format!("{ident}.serialize(out)")
 				} else {
 					format!(
 						"serialize{}(out, {ident})",
-						self.interface().typedefs[*id]
-							.ident
-							.to_upper_camel_case()
+						self.interface().typedefs[*id].ident.to_upper_camel_case()
 					)
 				}
 			},
@@ -392,19 +336,11 @@ pub trait JavaScriptGenerator {
 
 		match &typedef.kind {
 			TypeDefKind::Alias(ty) => self.print_serialize_alias(ident, ty),
-			TypeDefKind::Record(fields) => {
-				self.print_serialize_record(ident, fields)
-			},
-			TypeDefKind::Flags(fields) => {
-				self.print_serialize_flags(ident, fields)
-			},
-			TypeDefKind::Variant(cases) => {
-				self.print_serialize_variant(ident, cases)
-			},
+			TypeDefKind::Record(fields) => self.print_serialize_record(ident, fields),
+			TypeDefKind::Flags(fields) => self.print_serialize_flags(ident, fields),
+			TypeDefKind::Variant(cases) => self.print_serialize_variant(ident, cases),
 			TypeDefKind::Enum(cases) => self.print_serialize_enum(ident, cases),
-			TypeDefKind::Union(cases) => {
-				self.print_serialize_union(ident, cases)
-			},
+			TypeDefKind::Union(cases) => self.print_serialize_union(ident, cases),
 			TypeDefKind::Resource(_) => String::new(),
 		}
 	}
@@ -419,16 +355,10 @@ pub trait JavaScriptGenerator {
 		)
 	}
 
-	fn print_serialize_record(
-		&self,
-		ident:&str,
-		fields:&[RecordField],
-	) -> String {
+	fn print_serialize_record(&self, ident:&str, fields:&[RecordField]) -> String {
 		let inner = fields
 			.iter()
-			.map(|field| {
-				self.print_serialize_ty(&format!("val.{}", field.id), &field.ty)
-			})
+			.map(|field| self.print_serialize_ty(&format!("val.{}", field.id), &field.ty))
 			.collect::<Vec<_>>()
 			.join(",\n");
 
@@ -439,11 +369,7 @@ pub trait JavaScriptGenerator {
 		)
 	}
 
-	fn print_serialize_flags(
-		&self,
-		ident:&str,
-		fields:&[FlagsField],
-	) -> String {
+	fn print_serialize_flags(&self, ident:&str, fields:&[FlagsField]) -> String {
 		let inner = match flags_repr(fields) {
 			wit_parser::Int::U8 => "U8",
 			wit_parser::Int::U16 => "U16",
@@ -459,34 +385,27 @@ pub trait JavaScriptGenerator {
 		)
 	}
 
-	fn print_serialize_variant(
-		&self,
-		ident:&str,
-		cases:&[VariantCase],
-	) -> String {
-		let cases = cases.iter().enumerate().fold(
-			String::new(),
-			|mut str, (tag, case)| {
-				let prop_access =
-					format!("val.{}", case.id.to_upper_camel_case());
+	fn print_serialize_variant(&self, ident:&str, cases:&[VariantCase]) -> String {
+		let cases = cases.iter().enumerate().fold(String::new(), |mut str, (tag, case)| {
+			let prop_access = format!("val.{}", case.id.to_upper_camel_case());
 
-				let inner = case.ty.as_ref().map_or(String::new(), |ty| {
-					self.print_serialize_ty(&prop_access, ty)
-				});
+			let inner = case
+				.ty
+				.as_ref()
+				.map_or(String::new(), |ty| self.print_serialize_ty(&prop_access, ty));
 
-				let _ = write!(
-					str,
-					"if ({prop_access}) {{
+			let _ = write!(
+				str,
+				"if ({prop_access}) {{
     serializeU32(out, {tag});
     {inner}
     return
 }}
 "
-				);
+			);
 
-				str
-			},
-		);
+			str
+		});
 
 		format!(
 			r#"function serialize{ident}(out, val) {{
@@ -498,22 +417,19 @@ pub trait JavaScriptGenerator {
 	}
 
 	fn print_serialize_enum(&self, ident:&str, cases:&[EnumCase]) -> String {
-		let cases = cases.iter().enumerate().fold(
-			String::new(),
-			|mut str, (tag, case)| {
-				let ident = case.id.to_upper_camel_case();
+		let cases = cases.iter().enumerate().fold(String::new(), |mut str, (tag, case)| {
+			let ident = case.id.to_upper_camel_case();
 
-				let _ = write!(
-					str,
-					"case \"{ident}\":
+			let _ = write!(
+				str,
+				"case \"{ident}\":
     serializeU32(out, {tag})
     return
 "
-				);
+			);
 
-				str
-			},
-		);
+			str
+		});
 
 		format!(
 			r#"function serialize{ident}(out, val) {{
@@ -621,63 +537,43 @@ impl std::fmt::Display for SerdeUtils {
 			f.write_str(include_str!("./js/de_bool.js"))?;
 		}
 
-		if self
-			.contains(SerdeUtils::BITS8 | SerdeUtils::UNSIGNED | SerdeUtils::DE)
-		{
+		if self.contains(SerdeUtils::BITS8 | SerdeUtils::UNSIGNED | SerdeUtils::DE) {
 			f.write_str(include_str!("./js/de_u8.js"))?;
 		}
 
-		if self.contains(
-			SerdeUtils::BITS16 | SerdeUtils::UNSIGNED | SerdeUtils::DE,
-		) {
+		if self.contains(SerdeUtils::BITS16 | SerdeUtils::UNSIGNED | SerdeUtils::DE) {
 			f.write_str(include_str!("./js/de_u16.js"))?;
 		}
 
-		if self.contains(
-			SerdeUtils::BITS32 | SerdeUtils::UNSIGNED | SerdeUtils::DE,
-		) {
+		if self.contains(SerdeUtils::BITS32 | SerdeUtils::UNSIGNED | SerdeUtils::DE) {
 			f.write_str(include_str!("./js/de_u32.js"))?;
 		}
 
-		if self.contains(
-			SerdeUtils::BITS64 | SerdeUtils::UNSIGNED | SerdeUtils::DE,
-		) {
+		if self.contains(SerdeUtils::BITS64 | SerdeUtils::UNSIGNED | SerdeUtils::DE) {
 			f.write_str(include_str!("./js/de_u64.js"))?;
 		}
 
-		if self.contains(
-			SerdeUtils::BITS128 | SerdeUtils::UNSIGNED | SerdeUtils::DE,
-		) {
+		if self.contains(SerdeUtils::BITS128 | SerdeUtils::UNSIGNED | SerdeUtils::DE) {
 			f.write_str(include_str!("./js/de_u128.js"))?;
 		}
 
-		if self
-			.contains(SerdeUtils::BITS8 | SerdeUtils::SIGNED | SerdeUtils::DE)
-		{
+		if self.contains(SerdeUtils::BITS8 | SerdeUtils::SIGNED | SerdeUtils::DE) {
 			f.write_str(include_str!("./js/de_s8.js"))?;
 		}
 
-		if self
-			.contains(SerdeUtils::BITS16 | SerdeUtils::SIGNED | SerdeUtils::DE)
-		{
+		if self.contains(SerdeUtils::BITS16 | SerdeUtils::SIGNED | SerdeUtils::DE) {
 			f.write_str(include_str!("./js/de_s16.js"))?;
 		}
 
-		if self
-			.contains(SerdeUtils::BITS32 | SerdeUtils::SIGNED | SerdeUtils::DE)
-		{
+		if self.contains(SerdeUtils::BITS32 | SerdeUtils::SIGNED | SerdeUtils::DE) {
 			f.write_str(include_str!("./js/de_s32.js"))?;
 		}
 
-		if self
-			.contains(SerdeUtils::BITS64 | SerdeUtils::SIGNED | SerdeUtils::DE)
-		{
+		if self.contains(SerdeUtils::BITS64 | SerdeUtils::SIGNED | SerdeUtils::DE) {
 			f.write_str(include_str!("./js/de_s64.js"))?;
 		}
 
-		if self
-			.contains(SerdeUtils::BITS128 | SerdeUtils::SIGNED | SerdeUtils::DE)
-		{
+		if self.contains(SerdeUtils::BITS128 | SerdeUtils::SIGNED | SerdeUtils::DE) {
 			f.write_str(include_str!("./js/de_s128.js"))?;
 		}
 
@@ -721,63 +617,43 @@ impl std::fmt::Display for SerdeUtils {
 			f.write_str(include_str!("./js/ser_bool.js"))?;
 		}
 
-		if self.contains(
-			SerdeUtils::BITS8 | SerdeUtils::UNSIGNED | SerdeUtils::SER,
-		) {
+		if self.contains(SerdeUtils::BITS8 | SerdeUtils::UNSIGNED | SerdeUtils::SER) {
 			f.write_str(include_str!("./js/ser_u8.js"))?;
 		}
 
-		if self.contains(
-			SerdeUtils::BITS16 | SerdeUtils::UNSIGNED | SerdeUtils::SER,
-		) {
+		if self.contains(SerdeUtils::BITS16 | SerdeUtils::UNSIGNED | SerdeUtils::SER) {
 			f.write_str(include_str!("./js/ser_u16.js"))?;
 		}
 
-		if self.contains(
-			SerdeUtils::BITS32 | SerdeUtils::UNSIGNED | SerdeUtils::SER,
-		) {
+		if self.contains(SerdeUtils::BITS32 | SerdeUtils::UNSIGNED | SerdeUtils::SER) {
 			f.write_str(include_str!("./js/ser_u32.js"))?;
 		}
 
-		if self.contains(
-			SerdeUtils::BITS64 | SerdeUtils::UNSIGNED | SerdeUtils::SER,
-		) {
+		if self.contains(SerdeUtils::BITS64 | SerdeUtils::UNSIGNED | SerdeUtils::SER) {
 			f.write_str(include_str!("./js/ser_u64.js"))?;
 		}
 
-		if self.contains(
-			SerdeUtils::BITS128 | SerdeUtils::UNSIGNED | SerdeUtils::SER,
-		) {
+		if self.contains(SerdeUtils::BITS128 | SerdeUtils::UNSIGNED | SerdeUtils::SER) {
 			f.write_str(include_str!("./js/ser_u128.js"))?;
 		}
 
-		if self
-			.contains(SerdeUtils::BITS8 | SerdeUtils::SIGNED | SerdeUtils::SER)
-		{
+		if self.contains(SerdeUtils::BITS8 | SerdeUtils::SIGNED | SerdeUtils::SER) {
 			f.write_str(include_str!("./js/ser_s8.js"))?;
 		}
 
-		if self
-			.contains(SerdeUtils::BITS16 | SerdeUtils::SIGNED | SerdeUtils::SER)
-		{
+		if self.contains(SerdeUtils::BITS16 | SerdeUtils::SIGNED | SerdeUtils::SER) {
 			f.write_str(include_str!("./js/ser_s16.js"))?;
 		}
 
-		if self
-			.contains(SerdeUtils::BITS32 | SerdeUtils::SIGNED | SerdeUtils::SER)
-		{
+		if self.contains(SerdeUtils::BITS32 | SerdeUtils::SIGNED | SerdeUtils::SER) {
 			f.write_str(include_str!("./js/ser_s32.js"))?;
 		}
 
-		if self
-			.contains(SerdeUtils::BITS64 | SerdeUtils::SIGNED | SerdeUtils::SER)
-		{
+		if self.contains(SerdeUtils::BITS64 | SerdeUtils::SIGNED | SerdeUtils::SER) {
 			f.write_str(include_str!("./js/ser_s64.js"))?;
 		}
 
-		if self.contains(
-			SerdeUtils::BITS128 | SerdeUtils::SIGNED | SerdeUtils::SER,
-		) {
+		if self.contains(SerdeUtils::BITS128 | SerdeUtils::SIGNED | SerdeUtils::SER) {
 			f.write_str(include_str!("./js/ser_s128.js"))?;
 		}
 
@@ -827,10 +703,7 @@ impl std::fmt::Display for SerdeUtils {
 
 impl SerdeUtils {
 	#[must_use]
-	pub fn collect_from_functions(
-		typedefs:&TypeDefArena,
-		functions:&[Function],
-	) -> Self {
+	pub fn collect_from_functions(typedefs:&TypeDefArena, functions:&[Function]) -> Self {
 		let mut info = Self::empty();
 
 		for func in functions {
@@ -857,10 +730,7 @@ impl SerdeUtils {
 		info
 	}
 
-	fn collect_typedef_info(
-		typedefs:&TypeDefArena,
-		id:TypeDefId,
-	) -> SerdeUtils {
+	fn collect_typedef_info(typedefs:&TypeDefArena, id:TypeDefId) -> SerdeUtils {
 		let mut info = SerdeUtils::empty();
 		match &typedefs[id].kind {
 			TypeDefKind::Alias(ty) => {
@@ -922,25 +792,18 @@ impl SerdeUtils {
 			Type::Char => SerdeUtils::CHAR,
 			Type::String => SerdeUtils::STRING,
 			Type::Tuple(types) => {
-				types
-					.iter()
-					.map(|ty| Self::collect_type_info(typedefs, ty))
-					.collect()
+				types.iter().map(|ty| Self::collect_type_info(typedefs, ty)).collect()
 			},
 			Type::List(ty) if **ty == Type::U8 => SerdeUtils::BYTES,
-			Type::List(ty) => {
-				SerdeUtils::LIST | Self::collect_type_info(typedefs, ty)
-			},
-			Type::Option(ty) => {
-				SerdeUtils::OPTION | Self::collect_type_info(typedefs, ty)
-			},
+			Type::List(ty) => SerdeUtils::LIST | Self::collect_type_info(typedefs, ty),
+			Type::Option(ty) => SerdeUtils::OPTION | Self::collect_type_info(typedefs, ty),
 			Type::Result { ok, err } => {
-				let ok = ok.as_ref().map_or(SerdeUtils::empty(), |ty| {
-					Self::collect_type_info(typedefs, ty)
-				});
-				let err = err.as_ref().map_or(SerdeUtils::empty(), |ty| {
-					Self::collect_type_info(typedefs, ty)
-				});
+				let ok = ok
+					.as_ref()
+					.map_or(SerdeUtils::empty(), |ty| Self::collect_type_info(typedefs, ty));
+				let err = err
+					.as_ref()
+					.map_or(SerdeUtils::empty(), |ty| Self::collect_type_info(typedefs, ty));
 
 				SerdeUtils::RESULT | ok | err
 			},

@@ -6,15 +6,7 @@ use std::{
 
 pub use tauri_bindgen_host_macro::*;
 #[doc(hidden)]
-pub use {
-	anyhow,
-	async_trait::async_trait,
-	bitflags,
-	ipc_router_wip,
-	serde,
-	tauri,
-	tracing,
-};
+pub use {anyhow, async_trait::async_trait, bitflags, ipc_router_wip, serde, tauri, tracing};
 pub type Result<T> = anyhow::Result<T>;
 
 pub type ResourceId = u32;
@@ -95,13 +87,9 @@ impl ResourceTable {
 	/// # Panics
 	///
 	/// Panics if the resource is already borrowed.
-	pub fn get<T:Any + Send + Sync + Sized>(
-		&self,
-		key:ResourceId,
-	) -> Result<Arc<T>> {
+	pub fn get<T:Any + Send + Sync + Sized>(&self, key:ResourceId) -> Result<Arc<T>> {
 		if let Some(r) = self.0.read().unwrap().map.get(&key).cloned() {
-			r.downcast::<T>()
-				.map_err(|_| anyhow::anyhow!("element is a different type"))
+			r.downcast::<T>().map_err(|_| anyhow::anyhow!("element is a different type"))
 		} else {
 			Err(anyhow::anyhow!("key not in table"))
 		}
@@ -126,8 +114,8 @@ impl ResourceTable {
 			.get_mut(&key)
 			.ok_or(anyhow::anyhow!("key not in table"))?;
 
-		let entry = Arc::get_mut(entry)
-			.ok_or(anyhow::anyhow!("cannot mutably borrow shared file"))?;
+		let entry =
+			Arc::get_mut(entry).ok_or(anyhow::anyhow!("cannot mutably borrow shared file"))?;
 
 		entry
 			.downcast_mut::<T>()
@@ -140,11 +128,6 @@ impl ResourceTable {
 	///
 	/// Panics if the resource is already borrowed.
 	pub fn take<T:Any + Send + Sync>(&self, key:ResourceId) -> Option<Arc<T>> {
-		self.0
-			.write()
-			.unwrap()
-			.map
-			.remove(&key)
-			.map(|r| r.downcast::<T>().unwrap())
+		self.0.write().unwrap().map.remove(&key).map(|r| r.downcast::<T>().unwrap())
 	}
 }

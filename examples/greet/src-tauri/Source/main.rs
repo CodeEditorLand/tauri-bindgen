@@ -14,7 +14,7 @@ struct GreetCtx;
 
 #[::tauri_bindgen_host::async_trait]
 impl greet::Greet for GreetCtx {
-	async fn greet(&self, name: String) -> String {
+	async fn greet(&self, name:String) -> String {
 		format!("Hello, {}! You've been greeted from code-generated Rust!", name)
 	}
 }
@@ -22,7 +22,7 @@ impl greet::Greet for GreetCtx {
 fn main() {
 	tracing_subscriber::fmt().with_max_level(tracing::Level::TRACE).init();
 
-	let mut router: Router<GreetCtx> = Router::new(GreetCtx {});
+	let mut router:Router<GreetCtx> = Router::new(GreetCtx {});
 
 	greet::add_to_router(&mut router, |ctx| ctx).unwrap();
 

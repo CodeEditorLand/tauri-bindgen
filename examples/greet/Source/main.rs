@@ -26,8 +26,7 @@ fn main() {
 
 	println!("out_dir {}", out_dir);
 
-	let template =
-		std::fs::read_to_string(format!("{}/index.html", out_dir)).unwrap();
+	let template = std::fs::read_to_string(format!("{}/index.html", out_dir)).unwrap();
 
 	let html = sycamore::render_to_string(App);
 

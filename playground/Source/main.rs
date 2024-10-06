@@ -6,22 +6,20 @@ use wit_parser::Interface;
 
 #[wasm_bindgen(module = "/editor/dist/index.js")]
 extern {
-	fn setup(on_change: &Closure<dyn FnMut(JsValue)>);
+	fn setup(on_change:&Closure<dyn FnMut(JsValue)>);
 	#[wasm_bindgen(js_name = "updateOutput")]
-	fn update_output(id: &str, value: &str);
+	fn update_output(id:&str, value:&str);
 }
 
 fn main() {
 	console_error_panic_hook::set_once();
 	wasm_logger::init(wasm_logger::Config::default());
 
-	let on_change = Closure::wrap(Box::new(|value: JsValue| {
+	let on_change = Closure::wrap(Box::new(|value:JsValue| {
 		let source = value.as_string().unwrap();
 
 		let parse_res = wit_parser::parse_and_resolve_str(&source, |_| false)
-			.map_err(|err| {
-				err.with_source_code(NamedSource::new("input", source))
-			});
+			.map_err(|err| err.with_source_code(NamedSource::new("input", source)));
 
 		log::debug!("value: {:?}", parse_res);
 
@@ -32,9 +30,9 @@ fn main() {
 					"guest-rust",
 					&gen_interface(
 						tauri_bindgen_gen_guest_rust::Builder {
-							fmt: true,
-							unchecked: false,
-							no_std: false,
+							fmt:true,
+							unchecked:false,
+							no_std:false,
 						},
 						iface.clone(),
 					),
@@ -42,38 +40,25 @@ fn main() {
 				update_output(
 					"host",
 					&gen_interface(
-						tauri_bindgen_gen_host::Builder {
-							fmt: true,
-							tracing: false,
-							async_: false,
-						},
+						tauri_bindgen_gen_host::Builder { fmt:true, tracing:false, async_:false },
 						iface.clone(),
 					),
 				);
 				update_output(
 					"guest-js",
 					&gen_interface(
-						tauri_bindgen_gen_guest_js::Builder {
-							prettier: false,
-							romefmt: false,
-						},
+						tauri_bindgen_gen_guest_js::Builder { prettier:false, romefmt:false },
 						iface.clone(),
 					),
 				);
 				update_output(
 					"guest-ts",
 					&gen_interface(
-						tauri_bindgen_gen_guest_ts::Builder {
-							prettier: false,
-							romefmt: false,
-						},
+						tauri_bindgen_gen_guest_ts::Builder { prettier:false, romefmt:false },
 						iface.clone(),
 					),
 				);
-				let markdown = gen_interface(
-					tauri_bindgen_gen_markdown::Builder {},
-					iface,
-				);
+				let markdown = gen_interface(tauri_bindgen_gen_markdown::Builder {}, iface);
 				let parser = Parser::new_ext(
 					&markdown,
 					Options::ENABLE_STRIKETHROUGH
@@ -96,10 +81,9 @@ fn main() {
 	on_change.forget();
 }
 
-fn gen_interface<B>(builder: B, iface: Interface) -> String
+fn gen_interface<B>(builder:B, iface:Interface) -> String
 where
-	B: GeneratorBuilder,
-{
+	B: GeneratorBuilder, {
 	let mut gen = builder.build(iface);
 
 	gen.to_file().1

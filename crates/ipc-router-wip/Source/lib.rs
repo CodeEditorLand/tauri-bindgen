@@ -13,18 +13,12 @@ use futures_util::FutureExt;
 use serde::{de::DeserializeOwned, Serialize};
 use tauri::http::{header::CONTENT_TYPE, Request, Response, StatusCode};
 
-type Definition<T> = Box<
-	dyn Fn(Caller<T>, &[u8]) -> anyhow::Result<CallResult>
-		+ Send
-		+ Sync
-		+ 'static,
->;
+type Definition<T> =
+	Box<dyn Fn(Caller<T>, &[u8]) -> anyhow::Result<CallResult> + Send + Sync + 'static>;
 
 enum CallResult {
 	Value(Vec<u8>),
-	Future(
-		Pin<Box<dyn Future<Output = anyhow::Result<Vec<u8>>> + Send + 'static>>,
-	),
+	Future(Pin<Box<dyn Future<Output = anyhow::Result<Vec<u8>>> + Send + 'static>>),
 }
 
 pub struct Caller<T> {
@@ -61,12 +55,7 @@ impl<T> Router<T> {
 		}
 	}
 
-	pub fn define<F, P, R>(
-		&mut self,
-		module:&str,
-		name:&str,
-		func:F,
-	) -> anyhow::Result<()>
+	pub fn define<F, P, R>(&mut self, module:&str, name:&str, func:F) -> anyhow::Result<()>
 	where
 		F: Fn(Caller<T>, P) -> anyhow::Result<R> + Send + Sync + 'static,
 		P: DeserializeOwned,
@@ -116,16 +105,10 @@ impl<T> Router<T> {
 		Ok(())
 	}
 
-	async fn call(
-		&self,
-		module:Option<&str>,
-		name:&str,
-		params:&[u8],
-	) -> anyhow::Result<Vec<u8>> {
+	async fn call(&self, module:Option<&str>, name:&str, params:&[u8]) -> anyhow::Result<Vec<u8>> {
 		let key = self.import_key_read_only(module, name)?;
 
-		let handler =
-			self.map.get(&key).ok_or(anyhow::anyhow!("method not found"))?;
+		let handler = self.map.get(&key).ok_or(anyhow::anyhow!("method not found"))?;
 
 		let caller = Caller { data:self.data.clone() };
 
@@ -135,11 +118,7 @@ impl<T> Router<T> {
 		}
 	}
 
-	fn insert(
-		&mut self,
-		key:ImportKey,
-		item:Definition<T>,
-	) -> anyhow::Result<()> {
+	fn insert(&mut self, key:ImportKey, item:Definition<T>) -> anyhow::Result<()> {
 		match self.map.entry(key) {
 			Entry::Occupied(_) => {
 				let module = &self.strings[key.module];
@@ -156,37 +135,21 @@ impl<T> Router<T> {
 		Ok(())
 	}
 
-	fn import_key(
-		&mut self,
-		module:Option<impl AsRef<str>>,
-		name:impl AsRef<str>,
-	) -> ImportKey {
+	fn import_key(&mut self, module:Option<impl AsRef<str>>, name:impl AsRef<str>) -> ImportKey {
 		ImportKey {
-			module:module.map_or(usize::max_value(), |name| {
-				self.intern_str(name.as_ref())
-			}),
+			module:module.map_or(usize::max_value(), |name| self.intern_str(name.as_ref())),
 			name:self.intern_str(name.as_ref()),
 		}
 	}
 
-	fn import_key_read_only(
-		&self,
-		module:Option<&str>,
-		name:&str,
-	) -> anyhow::Result<ImportKey> {
+	fn import_key_read_only(&self, module:Option<&str>, name:&str) -> anyhow::Result<ImportKey> {
 		let module = if let Some(module) = module {
-			*self
-				.string2idx
-				.get(module)
-				.ok_or(anyhow::anyhow!("unknown module"))?
+			*self.string2idx.get(module).ok_or(anyhow::anyhow!("unknown module"))?
 		} else {
 			usize::MAX
 		};
 
-		let name = *self
-			.string2idx
-			.get(name)
-			.ok_or(anyhow::anyhow!("unknown function"))?;
+		let name = *self.string2idx.get(name).ok_or(anyhow::anyhow!("unknown function"))?;
 
 		Ok(ImportKey { module, name })
 	}
@@ -212,32 +175,28 @@ impl<R:tauri::Runtime> BuilderExt for tauri::Builder<R> {
 	fn ipc_router<U:Send + Sync + 'static>(self, router:Router<U>) -> Self {
 		let router = Arc::new(router);
 
-		self.register_asynchronous_uri_scheme_protocol(
-			"ipc",
-			move |_app, req, responder| {
-				let router = router.clone();
+		self.register_asynchronous_uri_scheme_protocol("ipc", move |_app, req, responder| {
+			let router = router.clone();
 
-				tauri::async_runtime::spawn(async move {
-					let mut response =
-						match uri_scheme_inner(&router, req).await {
-							Ok(res) => res,
-							Err(err) => {
-								Response::builder()
-									.status(StatusCode::BAD_REQUEST)
-									.body(err.to_string().into_bytes())
-									.unwrap()
-							},
-						};
+			tauri::async_runtime::spawn(async move {
+				let mut response = match uri_scheme_inner(&router, req).await {
+					Ok(res) => res,
+					Err(err) => {
+						Response::builder()
+							.status(StatusCode::BAD_REQUEST)
+							.body(err.to_string().into_bytes())
+							.unwrap()
+					},
+				};
 
-					response.headers_mut().insert(
-						tauri::http::header::ACCESS_CONTROL_ALLOW_ORIGIN,
-						tauri::http::header::HeaderValue::from_static("*"),
-					);
+				response.headers_mut().insert(
+					tauri::http::header::ACCESS_CONTROL_ALLOW_ORIGIN,
+					tauri::http::header::HeaderValue::from_static("*"),
+				);
 
-					responder.respond(response);
-				});
-			},
-		)
+				responder.respond(response);
+			});
+		})
 	}
 }
 
@@ -261,9 +220,7 @@ async fn uri_scheme_inner<T>(
 	let mut resp = Response::builder().status(StatusCode::OK);
 	resp.headers_mut().unwrap().insert(
 		CONTENT_TYPE,
-		tauri::http::header::HeaderValue::from_static(
-			"application/octet-stream",
-		),
+		tauri::http::header::HeaderValue::from_static("application/octet-stream"),
 	);
 
 	Ok(resp.body(response)?)

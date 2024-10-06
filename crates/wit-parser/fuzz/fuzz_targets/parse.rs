@@ -2,7 +2,7 @@
 
 use libfuzzer_sys::fuzz_target;
 
-fuzz_target!(|data: &str| {
+fuzz_target!(|data:&str| {
 	// fuzzed code goes here
 	drop(env_logger::try_init());
 

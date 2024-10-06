@@ -59,8 +59,7 @@ where
 	words
 		.into_iter()
 		.filter_map(|word| {
-			if distance::damerau_levenshtein(word.as_ref(), query.as_ref()) <= 3
-			{
+			if distance::damerau_levenshtein(word.as_ref(), query.as_ref()) <= 3 {
 				Some(word.as_ref().to_string())
 			} else {
 				None
@@ -80,8 +79,8 @@ pub fn detect_invalid_input(input:&str) -> crate::Result<()> {
 			// meaning. See [CVE-2021-42574] for background and motivation.
 			//
 			// [CVE-2021-42574]: https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-42574
-			'\u{202a}' | '\u{202b}' | '\u{202c}' | '\u{202d}' | '\u{202e}'
-			| '\u{2066}' | '\u{2067}' | '\u{2068}' | '\u{2069}' => {
+			'\u{202a}' | '\u{202b}' | '\u{202c}' | '\u{202d}' | '\u{202e}' | '\u{2066}'
+			| '\u{2067}' | '\u{2068}' | '\u{2069}' => {
 				return Err(Error::bidirectional_override_codepoint(pos));
 			},
 
@@ -95,8 +94,8 @@ pub fn detect_invalid_input(input:&str) -> crate::Result<()> {
 			// U+17A3 and U+17A4 deprecated, and U+17B4 and U+17B5 discouraged;
 			// see Unicode 13.0.0, sec. 16.4 Khmer, Characters Whose Use Is
 			// Discouraged.
-			'\u{149}' | '\u{673}' | '\u{f77}' | '\u{f79}' | '\u{17a3}'
-			| '\u{17a4}' | '\u{17b4}' | '\u{17b5}' => {
+			'\u{149}' | '\u{673}' | '\u{f77}' | '\u{f79}' | '\u{17a3}' | '\u{17a4}'
+			| '\u{17b4}' | '\u{17b5}' => {
 				return Err(Error::deprecated_codepoint(pos));
 			},
 

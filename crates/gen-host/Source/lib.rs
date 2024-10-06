@@ -11,12 +11,7 @@ use heck::{ToKebabCase, ToSnakeCase, ToUpperCamelCase};
 use proc_macro2::{Literal, TokenStream};
 use quote::{format_ident, quote};
 use tauri_bindgen_core::{Generate, GeneratorBuilder, TypeInfo, TypeInfos};
-use tauri_bindgen_gen_rust::{
-	print_generics,
-	BorrowMode,
-	FnSig,
-	RustGenerator,
-};
+use tauri_bindgen_gen_rust::{print_generics, BorrowMode, FnSig, RustGenerator};
 use wit_parser::{Function, Interface, Type, TypeDefKind};
 
 #[derive(Default, Debug, Clone)]
@@ -69,11 +64,7 @@ impl RustGenerator for Host {
 
 	fn infos(&self) -> &TypeInfos { &self.infos }
 
-	fn additional_attrs(
-		&self,
-		ident:&str,
-		info:TypeInfo,
-	) -> Option<TokenStream> {
+	fn additional_attrs(&self, ident:&str, info:TypeInfo) -> Option<TokenStream> {
 		let mut attrs = vec![];
 		if self.uses_two_names(info) {
 			if ident.ends_with("Param") {
@@ -123,12 +114,7 @@ impl RustGenerator for Host {
 			quote! { type #ident: #ident; }
 		});
 
-		let trait_ = self.print_trait(
-			&ident.to_string(),
-			functions.iter(),
-			resources,
-			false,
-		);
+		let trait_ = self.print_trait(&ident.to_string(), functions.iter(), resources, false);
 
 		quote! {
 			#docs
@@ -155,8 +141,9 @@ impl RustGenerator for Host {
 			Type::String => {
 				match mode {
 					BorrowMode::Owned => quote! { String },
-					BorrowMode::AllBorrowed(lt)
-					| BorrowMode::LeafBorrowed(lt) => quote! { &#lt str },
+					BorrowMode::AllBorrowed(lt) | BorrowMode::LeafBorrowed(lt) => {
+						quote! { &#lt str }
+					},
 				}
 			},
 			Type::List(ty) => {
@@ -201,14 +188,8 @@ impl RustGenerator for Host {
 				quote! { Option<#ty> }
 			},
 			Type::Result { ok, err } => {
-				let ok = ok
-					.as_ref()
-					.map(|ty| self.print_ty(ty, mode))
-					.unwrap_or(quote! { () });
-				let err = err
-					.as_ref()
-					.map(|ty| self.print_ty(ty, mode))
-					.unwrap_or(quote! { () });
+				let ok = ok.as_ref().map(|ty| self.print_ty(ty, mode)).unwrap_or(quote! { () });
+				let err = err.as_ref().map(|ty| self.print_ty(ty, mode)).unwrap_or(quote! { () });
 
 				quote! { Result<#ok, #err> }
 			},
@@ -223,17 +204,10 @@ impl RustGenerator for Host {
 				let ident = if self.uses_two_names(info) {
 					match mode {
 						BorrowMode::Owned => {
-							format_ident!(
-								"{}Result",
-								typedef.ident.to_upper_camel_case()
-							)
+							format_ident!("{}Result", typedef.ident.to_upper_camel_case())
 						},
-						BorrowMode::AllBorrowed(_)
-						| BorrowMode::LeafBorrowed(_) => {
-							format_ident!(
-								"{}Param",
-								typedef.ident.to_upper_camel_case()
-							)
+						BorrowMode::AllBorrowed(_) | BorrowMode::LeafBorrowed(_) => {
+							format_ident!("{}Param", typedef.ident.to_upper_camel_case())
 						},
 					}
 				} else {
@@ -267,21 +241,15 @@ impl Host {
 				func,
 			};
 
-			let sig = self.print_function_signature(
-				&sig,
-				&BorrowMode::Owned,
-				&BorrowMode::Owned,
-			);
+			let sig = self.print_function_signature(&sig, &BorrowMode::Owned, &BorrowMode::Owned);
 
 			quote! { #sig; }
 		});
 
 		let sized = sized.then_some(quote!(: Sized));
 
-		let async_trait = self
-			.opts
-			.async_
-			.then_some(quote! { #[::tauri_bindgen_host::async_trait] });
+		let async_trait =
+			self.opts.async_.then_some(quote! { #[::tauri_bindgen_host::async_trait] });
 
 		quote! {
 			#async_trait
@@ -292,11 +260,7 @@ impl Host {
 		}
 	}
 
-	fn extract_resources<'a>(
-		&'a self,
-		ty:&Type,
-		resources:&mut HashSet<&'a str>,
-	) {
+	fn extract_resources<'a>(&'a self, ty:&Type, resources:&mut HashSet<&'a str>) {
 		match ty {
 			Type::List(ty) | Type::Option(ty) => {
 				self.extract_resources(ty, resources);
@@ -326,11 +290,7 @@ impl Host {
 		}
 	}
 
-	fn print_router_fn_definition(
-		&self,
-		mod_name:&str,
-		func:&Function,
-	) -> TokenStream {
+	fn print_router_fn_definition(&self, mod_name:&str, func:&Function) -> TokenStream {
 		let func_name = func.id.to_snake_case();
 		let func_ident = format_ident!("{}", func_name);
 
@@ -342,10 +302,7 @@ impl Host {
 				quote! { #ty }
 			},
 			_ => {
-				let tys = func
-					.params
-					.iter()
-					.map(|(_, ty)| self.print_ty(ty, &BorrowMode::Owned));
+				let tys = func.params.iter().map(|(_, ty)| self.print_ty(ty, &BorrowMode::Owned));
 				quote! { (#(#tys),*) }
 			},
 		};
@@ -401,10 +358,7 @@ impl Host {
 		let func_name = method.id.to_snake_case();
 		let func_ident = format_ident!("{}", func_name);
 
-		let param_decl = method
-			.params
-			.iter()
-			.map(|(_, ty)| self.print_ty(ty, &BorrowMode::Owned));
+		let param_decl = method.params.iter().map(|(_, ty)| self.print_ty(ty, &BorrowMode::Owned));
 
 		let param_acc = match method.params.len() {
 			0 => quote! {},
@@ -419,8 +373,7 @@ impl Host {
 		};
 
 		let mod_name = format!("{mod_name}::resource::{resource_name}");
-		let get_r_ident =
-			format_ident!("get_{}", resource_name.to_snake_case());
+		let get_r_ident = format_ident!("get_{}", resource_name.to_snake_case());
 
 		if self.opts.async_ {
 			quote! {
@@ -466,15 +419,10 @@ impl Host {
 
 		let mod_name = mod_ident.to_snake_case();
 
-		let functions = functions
-			.map(|func| self.print_router_fn_definition(&mod_name, func));
+		let functions = functions.map(|func| self.print_router_fn_definition(&mod_name, func));
 
 		let methods = methods.map(|(resource_name, method)| {
-			self.print_router_method_definition(
-				&mod_name,
-				resource_name,
-				method,
-			)
+			self.print_router_method_definition(&mod_name, resource_name, method)
 		});
 
 		quote! {
@@ -504,10 +452,8 @@ impl Generate for Host {
 		let iface_name = self.interface.ident.to_snake_case();
 		let ident = format_ident!("{}", iface_name);
 
-		let typedefs = self.print_typedefs(
-			self.interface.typedefs.iter().map(|(id, _)| id),
-			&BorrowMode::Owned,
-		);
+		let typedefs = self
+			.print_typedefs(self.interface.typedefs.iter().map(|(id, _)| id), &BorrowMode::Owned);
 
 		let methods = self
 			.interface()
@@ -515,10 +461,7 @@ impl Generate for Host {
 			.iter()
 			.filter_map(|(_, typedef)| {
 				if let TypeDefKind::Resource(methods) = &typedef.kind {
-					Some(
-						std::iter::repeat(typedef.ident.as_str())
-							.zip(methods.iter()),
-					)
+					Some(std::iter::repeat(typedef.ident.as_str()).zip(methods.iter()))
 				} else {
 					None
 				}

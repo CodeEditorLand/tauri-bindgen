@@ -24,11 +24,7 @@ pub fn init(verbosity:u8) {
 				let mut level_style = f.default_level_style(record.level());
 				level_style.set_bold(true);
 
-				write!(
-					f,
-					"{:>12} ",
-					level_style.value(prettyprint_level(record.level()))
-				)?;
+				write!(f, "{:>12} ", level_style.value(prettyprint_level(record.level())))?;
 			}
 
 			if !is_command_output && log_enabled!(Level::Debug) {

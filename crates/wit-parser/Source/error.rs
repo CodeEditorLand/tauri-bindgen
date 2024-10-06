@@ -144,10 +144,7 @@ impl Error {
 		Self::NotDefined { location:loc.into(), help:None }
 	}
 
-	pub fn not_defined_with_help(
-		loc:impl Into<Span>,
-		help:impl Into<String>,
-	) -> Self {
+	pub fn not_defined_with_help(loc:impl Into<Span>, help:impl Into<String>) -> Self {
 		Self::NotDefined { location:loc.into(), help:Some(help.into()) }
 	}
 
@@ -159,9 +156,7 @@ impl Error {
 		Self::RecursiveType { location:loc.into() }
 	}
 
-	pub fn unused_type(loc:impl Into<Span>) -> Self {
-		Self::UnusedType { location:loc.into() }
-	}
+	pub fn unused_type(loc:impl Into<Span>) -> Self { Self::UnusedType { location:loc.into() } }
 
 	#[must_use]
 	pub fn bidirectional_override_codepoint(pos:usize) -> Self {
@@ -169,12 +164,8 @@ impl Error {
 	}
 
 	#[must_use]
-	pub fn deprecated_codepoint(pos:usize) -> Self {
-		Self::DeprecatedCodepoint { location:pos }
-	}
+	pub fn deprecated_codepoint(pos:usize) -> Self { Self::DeprecatedCodepoint { location:pos } }
 
 	#[must_use]
-	pub fn control_code(pos:usize) -> Self {
-		Self::ControlCode { location:pos }
-	}
+	pub fn control_code(pos:usize) -> Self { Self::ControlCode { location:pos } }
 }

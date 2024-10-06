@@ -3,13 +3,7 @@
 use std::{fmt::Write, path::PathBuf};
 
 use heck::{ToKebabCase, ToLowerCamelCase, ToSnakeCase, ToUpperCamelCase};
-use tauri_bindgen_core::{
-	postprocess,
-	Generate,
-	GeneratorBuilder,
-	TypeInfo,
-	TypeInfos,
-};
+use tauri_bindgen_core::{postprocess, Generate, GeneratorBuilder, TypeInfo, TypeInfos};
 use tauri_bindgen_gen_js::{JavaScriptGenerator, SerdeUtils};
 use wit_parser::{Function, FunctionResult, Interface, Type, TypeDefKind};
 
@@ -49,10 +43,8 @@ impl GeneratorBuilder for Builder {
 			interface.functions.iter().chain(methods),
 		);
 
-		let serde_utils = SerdeUtils::collect_from_functions(
-			&interface.typedefs,
-			&interface.functions,
-		);
+		let serde_utils =
+			SerdeUtils::collect_from_functions(&interface.typedefs, &interface.functions);
 
 		Box::new(JavaScript { opts:self, interface, infos, serde_utils })
 	}
@@ -82,9 +74,7 @@ impl JavaScript {
 		let serialize_params = func
 			.params
 			.iter()
-			.map(|(ident, ty)| {
-				self.print_serialize_ty(&ident.to_lower_camel_case(), ty)
-			})
+			.map(|(ident, ty)| self.print_serialize_ty(&ident.to_lower_camel_case(), ty))
 			.collect::<Vec<_>>()
 			.join(";\n");
 
@@ -176,15 +166,14 @@ async {ident} ({params}) {{
 			str
 		});
 
-		let param_docs =
-			func.params.iter().fold(String::new(), |mut str, (name, ty)| {
-				let ident = &name.to_lower_camel_case();
-				let ty = self.print_ty(ty);
+		let param_docs = func.params.iter().fold(String::new(), |mut str, (name, ty)| {
+			let ident = &name.to_lower_camel_case();
+			let ty = self.print_ty(ty);
 
-				let _ = writeln!(str, "* @param {{{ty}}} {ident}");
+			let _ = writeln!(str, "* @param {{{ty}}} {ident}");
 
-				str
-			});
+			str
+		});
 
 		let result_docs = func
 			.result
@@ -222,16 +211,10 @@ async {ident} ({params}) {{
 			| Type::S32
 			| Type::Float32
 			| Type::Float64 => "number".to_string(),
-			Type::U64 | Type::S64 | Type::U128 | Type::S128 => {
-				"bigint".to_string()
-			},
+			Type::U64 | Type::S64 | Type::U128 | Type::S128 => "bigint".to_string(),
 			Type::Char | Type::String => "string".to_string(),
 			Type::Tuple(types) => {
-				let types = types
-					.iter()
-					.map(|ty| self.print_ty(ty))
-					.collect::<Vec<_>>()
-					.join(", ");
+				let types = types.iter().map(|ty| self.print_ty(ty)).collect::<Vec<_>>().join(", ");
 
 				format!("[{types}]")
 			},
@@ -245,17 +228,12 @@ async {ident} ({params}) {{
 				format!("{ty} | null")
 			},
 			Type::Result { ok, err } => {
-				let ok =
-					ok.as_ref().map_or("_".to_string(), |ty| self.print_ty(ty));
-				let err = err
-					.as_ref()
-					.map_or("_".to_string(), |ty| self.print_ty(ty));
+				let ok = ok.as_ref().map_or("_".to_string(), |ty| self.print_ty(ty));
+				let err = err.as_ref().map_or("_".to_string(), |ty| self.print_ty(ty));
 
 				format!("Result<{ok}, {err}>")
 			},
-			Type::Id(id) => {
-				self.interface.typedefs[*id].ident.to_upper_camel_case()
-			},
+			Type::Id(id) => self.interface.typedefs[*id].ident.to_upper_camel_case(),
 		}
 	}
 
@@ -332,9 +310,7 @@ impl Generate for JavaScript {
 			.interface
 			.functions
 			.iter()
-			.map(|func| {
-				self.print_function(&self.interface.ident.to_snake_case(), func)
-			})
+			.map(|func| self.print_function(&self.interface.ident.to_snake_case(), func))
 			.collect();
 
 		let resources:String = self
@@ -368,12 +344,8 @@ impl Generate for JavaScript {
 			postprocess(&mut contents, "prettier", ["--parser=babel"])
 				.expect("failed to run `prettier`");
 		} else if self.opts.romefmt {
-			postprocess(
-				&mut contents,
-				"rome",
-				["format", "--stdin-file-path", "index.js"],
-			)
-			.expect("failed to run `rome format`");
+			postprocess(&mut contents, "rome", ["format", "--stdin-file-path", "index.js"])
+				.expect("failed to run `rome format`");
 		}
 
 		let mut filename = PathBuf::from(self.interface.ident.to_kebab_case());

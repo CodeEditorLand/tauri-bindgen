@@ -8,13 +8,7 @@
 use std::{fmt::Write, path::PathBuf};
 
 use heck::{ToKebabCase, ToLowerCamelCase, ToSnakeCase, ToUpperCamelCase};
-use tauri_bindgen_core::{
-	postprocess,
-	Generate,
-	GeneratorBuilder,
-	TypeInfo,
-	TypeInfos,
-};
+use tauri_bindgen_core::{postprocess, Generate, GeneratorBuilder, TypeInfo, TypeInfos};
 use tauri_bindgen_gen_js::{JavaScriptGenerator, SerdeUtils};
 use wit_parser::{
 	EnumCase,
@@ -66,10 +60,8 @@ impl GeneratorBuilder for Builder {
 			interface.functions.iter().chain(methods),
 		);
 
-		let serde_utils = SerdeUtils::collect_from_functions(
-			&interface.typedefs,
-			&interface.functions,
-		);
+		let serde_utils =
+			SerdeUtils::collect_from_functions(&interface.typedefs, &interface.functions);
 
 		Box::new(TypeScript { opts:self, interface, infos, serde_utils })
 	}
@@ -95,9 +87,7 @@ impl TypeScript {
 		let result = func
 			.result
 			.as_ref()
-			.map_or("Promise<void>".to_string(), |result| {
-				self.print_function_result(result)
-			});
+			.map_or("Promise<void>".to_string(), |result| self.print_function_result(result));
 
 		let deserialize_result = func
 			.result
@@ -108,9 +98,7 @@ impl TypeScript {
 		let serialize_params = func
 			.params
 			.iter()
-			.map(|(ident, ty)| {
-				self.print_serialize_ty(&ident.to_lower_camel_case(), ty)
-			})
+			.map(|(ident, ty)| self.print_serialize_ty(&ident.to_lower_camel_case(), ty))
 			.collect::<Vec<_>>()
 			.join(";\n");
 
@@ -154,11 +142,8 @@ export async function {ident} ({params}) : {result} {{
 				format!("Promise<{ty}>")
 			},
 			_ => {
-				let tys = result
-					.types()
-					.map(|ty| self.print_type(ty))
-					.collect::<Vec<_>>()
-					.join(", ");
+				let tys =
+					result.types().map(|ty| self.print_type(ty)).collect::<Vec<_>>().join(", ");
 				format!("Promise<[{tys}]>")
 			},
 		}
@@ -175,16 +160,11 @@ export async function {ident} ({params}) : {result} {{
 			| Type::S32
 			| Type::Float32
 			| Type::Float64 => "number".to_string(),
-			Type::U64 | Type::S64 | Type::U128 | Type::S128 => {
-				"bigint".to_string()
-			},
+			Type::U64 | Type::S64 | Type::U128 | Type::S128 => "bigint".to_string(),
 			Type::Char | Type::String => "string".to_string(),
 			Type::Tuple(types) => {
-				let types = types
-					.iter()
-					.map(|ty| self.print_type(ty))
-					.collect::<Vec<_>>()
-					.join(", ");
+				let types =
+					types.iter().map(|ty| self.print_type(ty)).collect::<Vec<_>>().join(", ");
 
 				format!("[{types}]")
 			},
@@ -198,18 +178,12 @@ export async function {ident} ({params}) : {result} {{
 				format!("{ty} | null")
 			},
 			Type::Result { ok, err } => {
-				let ok = ok
-					.as_ref()
-					.map_or("null".to_string(), |ty| self.print_type(ty));
-				let err = err
-					.as_ref()
-					.map_or("null".to_string(), |ty| self.print_type(ty));
+				let ok = ok.as_ref().map_or("null".to_string(), |ty| self.print_type(ty));
+				let err = err.as_ref().map_or("null".to_string(), |ty| self.print_type(ty));
 
 				format!("Result<{ok}, {err}>")
 			},
-			Type::Id(id) => {
-				self.interface.typedefs[*id].ident.to_upper_camel_case()
-			},
+			Type::Id(id) => self.interface.typedefs[*id].ident.to_upper_camel_case(),
 		}
 	}
 
@@ -220,24 +194,13 @@ export async function {ident} ({params}) : {result} {{
 
 		match &typedef.kind {
 			TypeDefKind::Alias(ty) => self.print_alias(&docs, ident, ty),
-			TypeDefKind::Record(fields) => {
-				self.print_record(&docs, ident, fields)
-			},
-			TypeDefKind::Flags(fields) => {
-				self.print_flags(&docs, ident, fields)
-			},
-			TypeDefKind::Variant(cases) => {
-				self.print_variant(&docs, ident, cases)
-			},
+			TypeDefKind::Record(fields) => self.print_record(&docs, ident, fields),
+			TypeDefKind::Flags(fields) => self.print_flags(&docs, ident, fields),
+			TypeDefKind::Variant(cases) => self.print_variant(&docs, ident, cases),
 			TypeDefKind::Enum(cases) => self.print_enum(&docs, ident, cases),
 			TypeDefKind::Union(cases) => self.print_union(&docs, ident, cases),
 			TypeDefKind::Resource(functions) => {
-				self.print_resource(
-					&self.interface.ident,
-					&docs,
-					ident,
-					functions,
-				)
+				self.print_resource(&self.interface.ident, &docs, ident, functions)
 			},
 		}
 	}
@@ -248,12 +211,7 @@ export async function {ident} ({params}) : {result} {{
 		format!("{docs}\nexport type {ident} = {ty};\n")
 	}
 
-	fn print_record(
-		&self,
-		docs:&str,
-		ident:&str,
-		fields:&[RecordField],
-	) -> String {
+	fn print_record(&self, docs:&str, ident:&str, fields:&[RecordField]) -> String {
 		let fields = fields.iter().fold(String::new(), |mut str, field| {
 			let docs = print_docs(&field.docs);
 			let ident = field.id.to_lower_camel_case();
@@ -267,37 +225,23 @@ export async function {ident} ({params}) : {result} {{
 		format!("{docs}\nexport interface {ident} {{ {fields} }}\n")
 	}
 
-	fn print_flags(
-		&self,
-		docs:&str,
-		ident:&str,
-		fields:&[FlagsField],
-	) -> String {
-		let fields = fields.iter().enumerate().fold(
-			String::new(),
-			|mut str, (i, field)| {
-				let docs = print_docs(&field.docs);
-				let ident = field.id.to_upper_camel_case();
-				let value:u64 = 2 << i;
+	fn print_flags(&self, docs:&str, ident:&str, fields:&[FlagsField]) -> String {
+		let fields = fields.iter().enumerate().fold(String::new(), |mut str, (i, field)| {
+			let docs = print_docs(&field.docs);
+			let ident = field.id.to_upper_camel_case();
+			let value:u64 = 2 << i;
 
-				let _ = write!(str, "{docs}\n{ident} = {value},\n");
+			let _ = write!(str, "{docs}\n{ident} = {value},\n");
 
-				str
-			},
-		);
+			str
+		});
 
 		format!("{docs}\nexport enum {ident} {{ {fields} }}\n")
 	}
 
-	fn print_variant(
-		&self,
-		docs:&str,
-		ident:&str,
-		cases:&[VariantCase],
-	) -> String {
-		let interfaces:String = cases.iter().enumerate().fold(
-			String::new(),
-			|mut str, (i, case)| {
+	fn print_variant(&self, docs:&str, ident:&str, cases:&[VariantCase]) -> String {
+		let interfaces:String =
+			cases.iter().enumerate().fold(String::new(), |mut str, (i, case)| {
 				let docs = print_docs(&case.docs);
 				let case_ident = case.id.to_upper_camel_case();
 				let value = case
@@ -311,13 +255,11 @@ export async function {ident} ({params}) : {result} {{
 
 				let _ = write!(
 					str,
-					"{docs}\nexport interface {ident}{case_ident} {{ tag: \
-					 {i}{value} }}\n"
+					"{docs}\nexport interface {ident}{case_ident} {{ tag: {i}{value} }}\n"
 				);
 
 				str
-			},
-		);
+			});
 
 		let cases:String = cases
 			.iter()
@@ -480,8 +422,7 @@ impl Generate for TypeScript {
 			.iter()
 			.any(Function::throws)
 			.then_some(
-				"export type Result<T, E> = { tag: 'ok', val: T } | { tag: \
-				 'err', val: E };\n",
+				"export type Result<T, E> = { tag: 'ok', val: T } | { tag: 'err', val: E };\n",
 			)
 			.unwrap_or_default();
 
@@ -517,20 +458,14 @@ impl Generate for TypeScript {
 			})
 			.collect();
 
-		let typedefs:String = self
-			.interface
-			.typedefs
-			.iter()
-			.map(|(id, _)| self.print_typedef(id))
-			.collect();
+		let typedefs:String =
+			self.interface.typedefs.iter().map(|(id, _)| self.print_typedef(id)).collect();
 
 		let functions:String = self
 			.interface
 			.functions
 			.iter()
-			.map(|func| {
-				self.print_function(&self.interface.ident.to_snake_case(), func)
-			})
+			.map(|func| self.print_function(&self.interface.ident.to_snake_case(), func))
 			.collect();
 
 		let mut contents = format!(
@@ -542,12 +477,8 @@ impl Generate for TypeScript {
 			postprocess(&mut contents, "prettier", ["--parser=typescript"])
 				.expect("failed to run `rome format`");
 		} else if self.opts.romefmt {
-			postprocess(
-				&mut contents,
-				"rome",
-				["format", "--stdin-file-path", "index.ts"],
-			)
-			.expect("failed to run `rome format`");
+			postprocess(&mut contents, "rome", ["format", "--stdin-file-path", "index.ts"])
+				.expect("failed to run `rome format`");
 		}
 
 		let mut filename = PathBuf::from(self.interface.ident.to_kebab_case());

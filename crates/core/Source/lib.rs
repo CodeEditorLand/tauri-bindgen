@@ -128,8 +128,7 @@ impl TypeInfos {
 			},
 			TypeDefKind::Record(fields) => {
 				for field in fields {
-					info |=
-						self.collect_type_info(typedefs, &field.ty, base_info);
+					info |= self.collect_type_info(typedefs, &field.ty, base_info);
 				}
 			},
 			TypeDefKind::Variant(cases) => {
@@ -141,8 +140,7 @@ impl TypeInfos {
 			},
 			TypeDefKind::Union(cases) => {
 				for case in cases {
-					info |=
-						self.collect_type_info(typedefs, &case.ty, base_info);
+					info |= self.collect_type_info(typedefs, &case.ty, base_info);
 				}
 			},
 			_ => {},
@@ -163,10 +161,7 @@ impl TypeInfos {
 	) -> TypeInfo {
 		match ty {
 			Type::String => base_info | TypeInfo::HAS_LIST,
-			Type::List(ty) => {
-				self.collect_type_info(typedefs, ty, base_info)
-					| TypeInfo::HAS_LIST
-			},
+			Type::List(ty) => self.collect_type_info(typedefs, ty, base_info) | TypeInfo::HAS_LIST,
 			Type::Option(ty) => self.collect_type_info(typedefs, ty, base_info),
 			Type::Tuple(types) => {
 				let mut info = base_info;
@@ -185,9 +180,7 @@ impl TypeInfos {
 				}
 				info
 			},
-			Type::Id(id) => {
-				base_info | self.collect_typedef_info(typedefs, *id, base_info)
-			},
+			Type::Id(id) => base_info | self.collect_typedef_info(typedefs, *id, base_info),
 			_ => base_info,
 		}
 	}
@@ -249,10 +242,7 @@ fn type_ident(typedefs:&TypeDefArena, ty:&Type) -> String {
 }
 
 #[must_use]
-pub fn union_case_names(
-	typedefs:&TypeDefArena,
-	cases:&[UnionCase],
-) -> Vec<String> {
+pub fn union_case_names(typedefs:&TypeDefArena, cases:&[UnionCase]) -> Vec<String> {
 	enum UsedState<'a> {
 		/// This name has been used once before.
 		///
