@@ -41,24 +41,29 @@ impl Markdown {
 			Type::String => "string".to_string(),
 			Type::List(ty) => {
 				let ty = self.print_ty(ty);
+
 				format!("list<{ty}>")
 			},
 			Type::Tuple(types) => {
 				let types = types.iter().map(|ty| self.print_ty(ty)).collect::<Vec<_>>().join(", ");
+
 				format!("tuple<{types}>")
 			},
 			Type::Option(ty) => {
 				let ty = self.print_ty(ty);
+
 				format!("option<{ty}>")
 			},
 			Type::Result { ok, err } => {
 				let ok = ok.as_ref().map_or("_".to_string(), |ty| self.print_ty(ty));
+
 				let err = err.as_ref().map_or("_".to_string(), |ty| self.print_ty(ty));
 
 				format!("result<{ok}, {err}>")
 			},
 			Type::Id(id) => {
 				let ident = &self.interface.typedefs[*id].ident;
+
 				let lnk = ident.to_snake_case();
 
 				format!("[{ident}](#{lnk})")
@@ -68,12 +73,15 @@ impl Markdown {
 
 	fn print_typedef(&self, id:TypeDefId) -> String {
 		let typedef = &self.interface.typedefs[id];
+
 		let ident = &typedef.ident;
+
 		let docs = print_docs(&typedef.docs);
 
 		match &typedef.kind {
 			wit_parser::TypeDefKind::Alias(ty) => {
 				let ty = self.print_ty(ty);
+
 				format!("## Alias {ident}\n\n`{ty}`\n\n{docs}")
 			},
 			wit_parser::TypeDefKind::Record(fields) => {
@@ -124,6 +132,7 @@ impl Markdown {
 				let cases = cases.iter().fold(String::new(), |mut str, case| {
 					let _ =
 						write!(str, "#### {ident}\n{docs}\n", ident = case.id, docs = case.docs);
+
 					str
 				});
 
@@ -137,6 +146,7 @@ impl Markdown {
 						ty = self.print_ty(&case.ty),
 						docs = case.docs
 					);
+
 					str
 				});
 
@@ -207,7 +217,9 @@ fn print_docs(docs:&str) -> String { docs.lines().map(str::trim).collect::<Vec<_
 impl Generate for Markdown {
 	fn to_file(&mut self) -> (std::path::PathBuf, String) {
 		let ident = &self.interface.ident;
+
 		let docs = print_docs(&self.interface.docs);
+
 		let typedefs = self
 			.interface
 			.typedefs
@@ -215,6 +227,7 @@ impl Generate for Markdown {
 			.map(|(id, _)| self.print_typedef(id))
 			.collect::<Vec<_>>()
 			.join("\n");
+
 		let functions = self
 			.interface
 			.functions
@@ -229,6 +242,7 @@ impl Generate for Markdown {
 		);
 
 		let mut filename = PathBuf::from(self.interface.ident.to_kebab_case());
+
 		filename.set_extension("md");
 
 		(filename, contents)

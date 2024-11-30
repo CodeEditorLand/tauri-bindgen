@@ -61,8 +61,11 @@ pub struct JavaScript {
 impl JavaScript {
 	fn print_function(&self, intf_name:&str, func:&Function) -> String {
 		let docs = self.print_docs(func);
+
 		let ident = func.id.to_lower_camel_case();
+
 		let name = func.id.to_snake_case();
+
 		let params = print_function_params(&func.params);
 
 		let deserialize_result = func
@@ -105,8 +108,11 @@ export async function {ident} ({params}) {{
             .iter()
             .fold(String::new(), |mut str, func| {
                 let docs = self.print_docs(func);
+
                 let mod_ident = mod_ident.to_snake_case();
+
                 let resource_ident = ident.to_snake_case();
+
                 let ident = func.id.to_lower_camel_case();
 
                 let params = print_function_params(&func.params);
@@ -143,7 +149,9 @@ async {ident} ({params}) {{
 			format!(
 				"static deserialize(de) {{
     const self = new {ident}();
+
     self.#id = deserializeU32(de);
+
     return self
 }}"
 			)
@@ -163,11 +171,13 @@ async {ident} ({params}) {{
 	fn print_docs(&self, func:&Function) -> String {
 		let docs = func.docs.lines().fold(String::new(), |mut str, line| {
 			let _ = writeln!(str, " * {line} \n");
+
 			str
 		});
 
 		let param_docs = func.params.iter().fold(String::new(), |mut str, (name, ty)| {
 			let ident = &name.to_lower_camel_case();
+
 			let ty = self.print_ty(ty);
 
 			let _ = writeln!(str, "* @param {{{ty}}} {ident}");
@@ -182,6 +192,7 @@ async {ident} ({params}) {{
 				match result {
 					FunctionResult::Anon(ty) => {
 						let ty = self.print_ty(ty);
+
 						format!("* @returns {{Promise<{ty}>}} \n")
 					},
 					FunctionResult::Named(types) => {
@@ -220,6 +231,7 @@ async {ident} ({params}) {{
 			},
 			Type::List(ty) => {
 				let ty = self.array_ty(ty).unwrap_or(self.print_ty(ty));
+
 				format!("{ty}[]")
 			},
 			Type::Option(ty) => {
@@ -229,6 +241,7 @@ async {ident} ({params}) {{
 			},
 			Type::Result { ok, err } => {
 				let ok = ok.as_ref().map_or("_".to_string(), |ty| self.print_ty(ty));
+
 				let err = err.as_ref().map_or("_".to_string(), |ty| self.print_ty(ty));
 
 				format!("Result<{ok}, {err}>")
@@ -319,6 +332,7 @@ impl Generate for JavaScript {
 			.iter()
 			.filter_map(|(id, typedef)| {
 				let info = self.infos[id];
+
 				if let TypeDefKind::Resource(functions) = &typedef.kind {
 					Some(self.print_resource(
 						&self.interface.ident,
@@ -349,6 +363,7 @@ impl Generate for JavaScript {
 		}
 
 		let mut filename = PathBuf::from(self.interface.ident.to_kebab_case());
+
 		filename.set_extension("js");
 
 		(filename, contents)

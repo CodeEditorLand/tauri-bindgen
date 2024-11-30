@@ -73,8 +73,11 @@ impl<'a> Resolver<'a> {
 		docs.iter()
 			.map(|span| {
 				let str = self.read_span(span);
+
 				let str = str.strip_prefix("///").unwrap_or(str);
+
 				let str = str.strip_prefix("/**").unwrap_or(str);
+
 				let str = str.trim();
 
 				str
@@ -103,7 +106,9 @@ impl<'a> Resolver<'a> {
 					.iter()
 					.map(|field| {
 						let docs = self.resolve_docs(&field.docs);
+
 						let ident = self.resolve_ident(&field.ident).to_string();
+
 						let ty = self.resolve_type(&field.ty)?;
 
 						Ok(RecordField { docs, id:ident, ty })
@@ -115,6 +120,7 @@ impl<'a> Resolver<'a> {
 			parse::InterfaceItemInner::Flags(fields) => {
 				let fields = fields.iter().map(|field| {
 					let docs = self.resolve_docs(&field.docs);
+
 					let ident = self.resolve_ident(&field.ident).to_string();
 
 					FlagsField { docs, id:ident }
@@ -127,7 +133,9 @@ impl<'a> Resolver<'a> {
 					.iter()
 					.map(|case| {
 						let docs = self.resolve_docs(&case.docs);
+
 						let ident = self.resolve_ident(&case.ident).to_string();
+
 						let ty = case.ty.as_ref().map(|ty| self.resolve_type(ty)).transpose()?;
 
 						Ok(VariantCase { docs, id:ident, ty })
@@ -139,6 +147,7 @@ impl<'a> Resolver<'a> {
 			parse::InterfaceItemInner::Enum(cases) => {
 				let cases = cases.iter().map(|case| {
 					let docs = self.resolve_docs(&case.docs);
+
 					let ident = self.resolve_ident(&case.ident).to_string();
 
 					EnumCase { docs, id:ident }
@@ -151,6 +160,7 @@ impl<'a> Resolver<'a> {
 					.iter()
 					.map(|case| {
 						let docs = self.resolve_docs(&case.docs);
+
 						let ty = self.resolve_type(&case.ty)?;
 
 						Ok(UnionCase { docs, ty })
@@ -171,7 +181,9 @@ impl<'a> Resolver<'a> {
 		};
 
 		let id = self.typedefs.alloc(TypeDef { docs, ident:ident.to_string(), kind });
+
 		self.ident2id.insert(ident, id);
+
 		self.iface_typedefs.remove(ident);
 
 		Ok(id)
@@ -253,6 +265,7 @@ impl<'a> Resolver<'a> {
 			.iter()
 			.map(|(ident, ty)| {
 				let ident = self.resolve_ident(ident).to_string();
+
 				let ty = self.resolve_type(ty)?;
 
 				Ok((ident, ty))
@@ -263,6 +276,7 @@ impl<'a> Resolver<'a> {
 
 	fn resolve_func(&mut self, docs:&[Span], ident:&Span, func:&parse::Func) -> Result<Function> {
 		let docs = self.resolve_docs(docs);
+
 		let ident = self.resolve_ident(ident).to_string();
 
 		let params = self.resolve_named_types(&func.params)?;
@@ -271,10 +285,12 @@ impl<'a> Resolver<'a> {
 			None => None,
 			Some(parse::FuncResult::Anon(ty)) => {
 				let ty = self.resolve_type(ty)?;
+
 				Some(FunctionResult::Anon(ty))
 			},
 			Some(parse::FuncResult::Named(types)) => {
 				let types = self.resolve_named_types(types)?;
+
 				Some(FunctionResult::Named(types))
 			},
 		};
@@ -349,6 +365,7 @@ impl<'a> Resolver<'a> {
 		}
 
 		valid.insert(id);
+
 		visiting.remove(&id);
 
 		Ok(())
@@ -356,6 +373,7 @@ impl<'a> Resolver<'a> {
 
 	pub fn resolve(mut self, rest_data:RestInterface) -> Result<Interface> {
 		let docs = self.resolve_docs(&rest_data.docs);
+
 		let ident = self.resolve_ident(&rest_data.ident).to_string();
 
 		let ident2span = self
@@ -365,15 +383,19 @@ impl<'a> Resolver<'a> {
 			.collect::<HashMap<_, _>>();
 
 		let mut functions = Vec::new();
+
 		for item in rest_data.functions {
 			if let parse::InterfaceItemInner::Func(func) = &item.inner {
 				let func = self.resolve_func(&item.docs, &item.ident, func)?;
+
 				functions.push(func);
 			}
 		}
 
 		let mut visiting = HashSet::new();
+
 		let mut valid_types = HashSet::new();
+
 		for (id, typedef) in &self.typedefs {
 			let ident = ident2span[typedef.ident.as_str()].clone();
 
@@ -397,6 +419,7 @@ impl<'a> Resolver<'a> {
 #[cfg(test)]
 mod test {
 	use logos::Lexer;
+
 	use parse::FromTokens;
 
 	use super::*;
@@ -409,10 +432,13 @@ mod test {
             /// A function that returns a character
             func return_char() -> char
           }";
+
 		let mut tokens = Lexer::new(source).spanned().peekable();
 
 		let iface = parse::Interface::parse(&mut tokens)?;
+
 		let (resolver, rest_data) = Resolver::new(source, iface);
+
 		let iface = resolver.resolve(rest_data)?;
 
 		println!("{iface:#?}");
@@ -426,15 +452,20 @@ mod test {
             record a {
                 foo: nested
             }
+
             record nested {
                 bar: string
             }
+
             func fn(x: a) -> nested
           }";
+
 		let mut tokens = Lexer::new(source).spanned().peekable();
 
 		let iface = parse::Interface::parse(&mut tokens)?;
+
 		let (resolver, rest_data) = Resolver::new(source, iface);
+
 		let iface = resolver.resolve(rest_data)?;
 
 		println!("{iface:#?}");
@@ -449,7 +480,9 @@ mod test {
 		let mut tokens = Lexer::new(source).spanned().peekable();
 
 		let iface = parse::Interface::parse(&mut tokens)?;
+
 		let (resolver, rest_data) = Resolver::new(source, iface);
+
 		resolver.resolve(rest_data)?;
 
 		Ok(())

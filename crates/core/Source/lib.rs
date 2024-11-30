@@ -20,6 +20,7 @@ pub trait GeneratorBuilder {
 
 pub trait Generate {
 	fn to_file(&mut self) -> (PathBuf, String);
+
 	fn to_tokens(&mut self) -> TokenStream {
 		unimplemented!("to_tokens is not implemented for this generator")
 	}
@@ -53,10 +54,15 @@ where
 		.stdin(Stdio::piped())
 		.stdout(Stdio::piped())
 		.spawn()?;
+
 	child.stdin.take().unwrap().write_all(file.as_bytes())?;
+
 	file.truncate(0);
+
 	child.stdout.take().unwrap().read_to_string(file)?;
+
 	let status = child.wait()?;
+
 	assert!(status.success());
 
 	Ok(())
@@ -165,19 +171,24 @@ impl TypeInfos {
 			Type::Option(ty) => self.collect_type_info(typedefs, ty, base_info),
 			Type::Tuple(types) => {
 				let mut info = base_info;
+
 				for ty in types {
 					info |= self.collect_type_info(typedefs, ty, base_info);
 				}
+
 				info
 			},
 			Type::Result { ok, err } => {
 				let mut info = base_info;
+
 				if let Some(ty) = &ok {
 					info |= self.collect_type_info(typedefs, ty, base_info);
 				}
+
 				if let Some(ty) = &err {
 					info |= self.collect_type_info(typedefs, ty, base_info);
 				}
+
 				info
 			},
 			Type::Id(id) => base_info | self.collect_typedef_info(typedefs, *id, base_info),
@@ -259,6 +270,7 @@ pub fn union_case_names(typedefs:&TypeDefArena, cases:&[UnionCase]) -> Vec<Strin
 	let mut case_names = vec![String::new(); cases.len()];
 	// A map from case names to their `UsedState`.
 	let mut used = HashMap::new();
+
 	for (case, name) in cases.iter().zip(case_names.iter_mut()) {
 		name.push_str(&type_ident(typedefs, &case.ty));
 

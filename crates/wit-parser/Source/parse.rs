@@ -15,6 +15,7 @@ pub type Tokens<'a> = Peekable<SpannedIter<'a, Token>>;
 
 trait TokensExt {
 	fn next_if_token(&mut self, token:Token) -> Result<Option<(Token, Span)>>;
+
 	fn expect(&mut self, token:Token) -> Result<(Token, Span)>;
 }
 
@@ -231,6 +232,7 @@ impl<'a> FromTokens<'a> for InterfaceItem {
 						found,
 					));
 				}
+
 				return Err(Error::unexpected_token_with_help(
 					kind_span,
 					Token::IFACE_ITEM_KEYWORD,
@@ -318,6 +320,7 @@ impl<'a> FromTokens<'a> for VariantCase {
 
 		let ty = if tokens.next_if_token(Token::LeftParen)?.is_some() {
 			let ty = Type::parse(tokens)?;
+
 			tokens.expect(Token::RightParen)?;
 
 			Some(ty)
@@ -385,7 +388,9 @@ impl<'a> FromTokens<'a> for Type {
 			Token::String => Ok(Self::String),
 			Token::List => {
 				tokens.expect(Token::LessThan)?;
+
 				let ty = Type::parse(tokens)?;
+
 				tokens.expect(Token::GreaterThan)?;
 
 				Ok(Self::List(Box::new(ty)))
@@ -398,18 +403,22 @@ impl<'a> FromTokens<'a> for Type {
 			},
 			Token::Option => {
 				tokens.expect(Token::LessThan)?;
+
 				let ty = Type::parse(tokens)?;
+
 				tokens.expect(Token::GreaterThan)?;
 
 				Ok(Self::Option(Box::new(ty)))
 			},
 			Token::Result => {
 				let mut ok = None;
+
 				let mut err = None;
 
 				if tokens.next_if_token(Token::LessThan)?.is_some() {
 					if tokens.next_if_token(Token::Underscore)?.is_some() {
 						tokens.expect(Token::Comma)?;
+
 						err = Some(Box::new(Type::parse(tokens)?));
 					} else {
 						ok = Some(Box::new(Type::parse(tokens)?));
@@ -418,6 +427,7 @@ impl<'a> FromTokens<'a> for Type {
 							err = Some(Box::new(Type::parse(tokens)?));
 						}
 					};
+
 					tokens.expect(Token::GreaterThan)?;
 				};
 
@@ -440,6 +450,7 @@ where
 	tokens.expect(start)?;
 
 	let mut items = Vec::new();
+
 	loop {
 		// if we found an end token then we're done
 		if tokens.next_if_token(end)?.is_some() {
@@ -447,6 +458,7 @@ where
 		}
 
 		let item = FromTokens::parse(tokens)?;
+
 		items.push(item);
 
 		// if there's no trailing separator then this is required to be the end,
@@ -454,10 +466,12 @@ where
 		if let Some(sep) = sep {
 			if tokens.next_if_token(sep)?.is_none() {
 				tokens.expect(end)?;
+
 				break;
 			}
 		}
 	}
+
 	Ok(items)
 }
 
@@ -476,6 +490,7 @@ fn parse_docs(tokens:&mut Tokens) -> Vec<Span> {
 #[cfg(test)]
 mod test {
 	use logos::Lexer;
+
 	use pretty_assertions::assert_eq;
 
 	use super::*;
@@ -595,6 +610,7 @@ mod test {
 		//         .collect::<Vec<_>>(),
 		//     vec!["lego", "marvel-superhero", "supervillain"]
 		// );
+
 		Ok(())
 	}
 
@@ -617,6 +633,7 @@ mod test {
 		//     ty.cases.into_iter().map(|c| c.ty).collect::<Vec<_>>(),
 		//     vec![Type::String, Type::List(Box::new(Type::String))]
 		// );
+
 		Ok(())
 	}
 

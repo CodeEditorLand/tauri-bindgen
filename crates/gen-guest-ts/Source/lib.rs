@@ -80,6 +80,7 @@ impl TypeScript {
 		let docs = print_docs(&func.docs);
 
 		let ident = func.id.to_lower_camel_case();
+
 		let name = func.id.to_snake_case();
 
 		let params = self.print_function_params(&func.params);
@@ -126,6 +127,7 @@ export async function {ident} ({params}) : {result} {{
 			.iter()
 			.map(|(ident, ty)| {
 				let ident = ident.to_lower_camel_case();
+
 				let ty = self.print_type(ty);
 
 				format!("{ident}: {ty}")
@@ -139,11 +141,13 @@ export async function {ident} ({params}) : {result} {{
 			0 => "Promise<void>".to_string(),
 			1 => {
 				let ty = self.print_type(result.types().next().unwrap());
+
 				format!("Promise<{ty}>")
 			},
 			_ => {
 				let tys =
 					result.types().map(|ty| self.print_type(ty)).collect::<Vec<_>>().join(", ");
+
 				format!("Promise<[{tys}]>")
 			},
 		}
@@ -170,6 +174,7 @@ export async function {ident} ({params}) : {result} {{
 			},
 			Type::List(ty) => {
 				let ty = self.array_ty(ty).unwrap_or(self.print_type(ty));
+
 				format!("{ty}[]")
 			},
 			Type::Option(ty) => {
@@ -179,6 +184,7 @@ export async function {ident} ({params}) : {result} {{
 			},
 			Type::Result { ok, err } => {
 				let ok = ok.as_ref().map_or("null".to_string(), |ty| self.print_type(ty));
+
 				let err = err.as_ref().map_or("null".to_string(), |ty| self.print_type(ty));
 
 				format!("Result<{ok}, {err}>")
@@ -189,7 +195,9 @@ export async function {ident} ({params}) : {result} {{
 
 	fn print_typedef(&self, id:TypeDefId) -> String {
 		let typedef = &self.interface.typedefs[id];
+
 		let ident = &typedef.ident.to_upper_camel_case();
+
 		let docs = print_docs(&typedef.docs);
 
 		match &typedef.kind {
@@ -214,7 +222,9 @@ export async function {ident} ({params}) : {result} {{
 	fn print_record(&self, docs:&str, ident:&str, fields:&[RecordField]) -> String {
 		let fields = fields.iter().fold(String::new(), |mut str, field| {
 			let docs = print_docs(&field.docs);
+
 			let ident = field.id.to_lower_camel_case();
+
 			let ty = self.print_type(&field.ty);
 
 			let _ = write!(str, "{docs}\n{ident}: {ty},\n");
@@ -228,7 +238,9 @@ export async function {ident} ({params}) : {result} {{
 	fn print_flags(&self, docs:&str, ident:&str, fields:&[FlagsField]) -> String {
 		let fields = fields.iter().enumerate().fold(String::new(), |mut str, (i, field)| {
 			let docs = print_docs(&field.docs);
+
 			let ident = field.id.to_upper_camel_case();
+
 			let value:u64 = 2 << i;
 
 			let _ = write!(str, "{docs}\n{ident} = {value},\n");
@@ -243,12 +255,15 @@ export async function {ident} ({params}) : {result} {{
 		let interfaces:String =
 			cases.iter().enumerate().fold(String::new(), |mut str, (i, case)| {
 				let docs = print_docs(&case.docs);
+
 				let case_ident = case.id.to_upper_camel_case();
+
 				let value = case
 					.ty
 					.as_ref()
 					.map(|ty| {
 						let ty = self.print_type(ty);
+
 						format!(", value: {ty}")
 					})
 					.unwrap_or_default();
@@ -265,6 +280,7 @@ export async function {ident} ({params}) : {result} {{
 			.iter()
 			.map(|case| {
 				let docs = print_docs(&case.docs);
+
 				let case_ident = case.id.to_upper_camel_case();
 
 				format!("{docs}\n{ident}{case_ident}")
@@ -278,6 +294,7 @@ export async function {ident} ({params}) : {result} {{
 	fn print_enum(&self, docs:&str, ident:&str, cases:&[EnumCase]) -> String {
 		let cases = cases.iter().fold(String::new(), |mut str, case| {
 			let docs = print_docs(&case.docs);
+
 			let ident = case.id.to_upper_camel_case();
 
 			let _ = write!(str, "{docs}\n{ident},\n");
@@ -293,6 +310,7 @@ export async function {ident} ({params}) : {result} {{
 			.iter()
 			.map(|case| {
 				let docs = print_docs(&case.docs);
+
 				let ty = self.print_type(&case.ty);
 
 				format!("{docs}\n{ty}\n")
@@ -316,10 +334,13 @@ export async function {ident} ({params}) : {result} {{
                 let docs = print_docs(&func.docs);
 
                 let mod_ident = mod_ident.to_snake_case();
+
                 let resource_ident = ident.to_snake_case();
+
                 let ident = func.id.to_lower_camel_case();
 
                 let params = self.print_function_params(&func.params);
+
                 let result = func
                     .result
                     .as_ref()
@@ -400,6 +421,7 @@ fn print_docs(docs:&str) -> String {
 
 	let docs = docs.lines().fold(String::new(), |mut str, line| {
 		let _ = writeln!(str, " * {line}");
+
 		str
 	});
 
@@ -482,6 +504,7 @@ impl Generate for TypeScript {
 		}
 
 		let mut filename = PathBuf::from(self.interface.ident.to_kebab_case());
+
 		filename.set_extension("ts");
 
 		(filename, contents)

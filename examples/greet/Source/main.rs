@@ -35,5 +35,6 @@ fn main() {
 	let path = format!("{}/index.html", out_dir);
 
 	println!("Writing html to file \"{}\"", path);
+
 	std::fs::write(path, html).unwrap();
 }

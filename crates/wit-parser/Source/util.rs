@@ -20,12 +20,14 @@ impl<I:Iterator> IteratorExt for I {
 			match (acc, res) {
 				(Ok(mut left), Ok(val)) => {
 					left.extend(Some(val));
+
 					Ok(left)
 				},
 				(Err(mut right), Err(err)) => {
 					if let Error::Multi { errors } = &mut right {
 						errors.push(err);
 					}
+
 					Err(right)
 				},
 				(Ok(_), Err(err)) => Err(Error::Multi { errors:vec![err] }),
@@ -37,6 +39,7 @@ impl<I:Iterator> IteratorExt for I {
 
 pub fn print_list<T:Display>(iter:impl IntoIterator<Item = T>) -> String {
 	let mut iter = iter.into_iter().peekable();
+
 	let mut out = String::new();
 
 	while let Some(el) = iter.next() {

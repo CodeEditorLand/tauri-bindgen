@@ -12,8 +12,10 @@ pub enum Error {
 
 fn block_comment(lex:&mut Lexer<Token>) -> FilterResult<(), Error> {
 	let mut depth = 1;
+
 	while depth > 0 {
 		let remainder = lex.remainder();
+
 		match remainder.slice(0..2) {
 			Some("/*") => depth += 1,
 			Some("*/") => depth -= 1,
@@ -26,9 +28,11 @@ fn block_comment(lex:&mut Lexer<Token>) -> FilterResult<(), Error> {
 		// code point we find the next valid character boundary here and jump to
 		// that.
 		let mut bump_by = 1;
+
 		while !remainder.is_char_boundary(bump_by) {
 			bump_by += 1;
 		}
+
 		lex.bump(bump_by);
 	}
 
@@ -162,6 +166,7 @@ impl Token {
 		Token::Variant,
 		Token::Resource,
 	];
+
 	pub const TYPE_KEYWORD:[Token; 20] = [
 		Token::U8,
 		Token::U16,
@@ -250,33 +255,41 @@ mod test {
 	#[test]
 	fn comment() {
 		let mut lex = Token::lexer("/* this is a comment */");
+
 		assert_eq!(lex.next(), None);
 
 		let mut lex = Token::lexer("// this is a comment");
+
 		assert_eq!(lex.next(), None);
 	}
 
 	#[test]
 	fn doc_comment() {
 		let mut lex = Token::lexer("/// this is a comment");
+
 		assert_eq!(lex.next(), Some(Ok(Token::DocComment)));
 
 		let mut lex = Token::lexer("/** this is a comment */");
+
 		assert_eq!(lex.next(), Some(Ok(Token::BlockDocComment)));
 	}
 
 	#[test]
 	fn ident() {
 		let mut lex = Token::lexer("foo");
+
 		assert_eq!(lex.next(), Some(Ok(Token::Ident)));
 
 		let mut lex = Token::lexer("foo_bar");
+
 		assert_eq!(lex.next(), Some(Ok(Token::Ident)));
 
 		let mut lex = Token::lexer("%foo");
+
 		assert_eq!(lex.next(), Some(Ok(Token::Ident)));
 
 		let mut lex = Token::lexer("%foo_bar");
+
 		assert_eq!(lex.next(), Some(Ok(Token::Ident)));
 	}
 }

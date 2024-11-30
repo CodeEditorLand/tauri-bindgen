@@ -12,7 +12,9 @@ pub fn generate(input:TokenStream) -> TokenStream {
 
 mod kw {
 	syn::custom_keyword!(unchecked);
+
 	syn::custom_keyword!(no_std);
+
 	syn::custom_keyword!(skip);
 }
 
@@ -27,11 +29,15 @@ impl Parse for Opt {
 
 		if l.peek(kw::unchecked) {
 			input.parse::<kw::unchecked>()?;
+
 			input.parse::<Token![:]>()?;
+
 			Ok(Opt::Unchecked(input.parse::<syn::LitBool>()?.value))
 		} else if l.peek(kw::no_std) {
 			input.parse::<kw::no_std>()?;
+
 			input.parse::<Token![:]>()?;
+
 			Ok(Opt::NoStd(input.parse::<syn::LitBool>()?.value))
 		} else {
 			Err(l.error())

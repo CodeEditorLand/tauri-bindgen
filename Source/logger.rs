@@ -11,17 +11,22 @@ pub fn init(verbosity:u8) {
 		.filter(None, verbosity_level(verbosity).to_level_filter())
 		.format(|f, record| {
 			let mut is_command_output = false;
+
 			if let Some(action) = record.key_values().get("action".into()) {
 				let action = action.to_str().unwrap();
+
 				is_command_output = action == "stdout" || action == "stderr";
+
 				if !is_command_output {
 					let mut action_style = f.style();
+
 					action_style.set_color(Color::Green).set_bold(true);
 
 					write!(f, "{:>12} ", action_style.value(action))?;
 				}
 			} else {
 				let mut level_style = f.default_level_style(record.level());
+
 				level_style.set_bold(true);
 
 				write!(f, "{:>12} ", level_style.value(prettyprint_level(record.level())))?;
@@ -29,6 +34,7 @@ pub fn init(verbosity:u8) {
 
 			if !is_command_output && log_enabled!(Level::Debug) {
 				let mut target_style = f.style();
+
 				target_style.set_color(Color::Black);
 
 				write!(f, "[{}] ", target_style.value(record.target()))?;

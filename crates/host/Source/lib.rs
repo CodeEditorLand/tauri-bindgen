@@ -43,13 +43,18 @@ impl ResourceTable {
 		if inner.map.len() == u32::MAX as usize {
 			return Err(anyhow::anyhow!("table has no free keys"));
 		}
+
 		loop {
 			let key = inner.next_rid;
+
 			inner.next_rid += 1;
+
 			if inner.map.contains_key(&key) {
 				continue;
 			}
+
 			inner.map.insert(key, a);
+
 			return Ok(key);
 		}
 	}

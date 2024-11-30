@@ -41,6 +41,7 @@ pub fn parse_and_resolve_file(
 	skip:impl Fn(&str) -> bool,
 ) -> miette::Result<Interface> {
 	let path = path.as_ref();
+
 	let input = std::fs::read_to_string(path).into_diagnostic()?;
 
 	let iface = parse_and_resolve(&input, skip).map_err(|error:ErrReport| {
@@ -55,6 +56,7 @@ fn parse_and_resolve(input:&str, skip:impl Fn(&str) -> bool) -> miette::Result<I
 	let iface = parse(input, skip)?;
 
 	let (resolver, rest_data) = Resolver::new(input, iface);
+
 	resolver.resolve(rest_data).map_err(Into::into)
 }
 

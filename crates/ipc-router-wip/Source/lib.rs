@@ -122,16 +122,19 @@ impl<T> Router<T> {
 		match self.map.entry(key) {
 			Entry::Occupied(_) => {
 				let module = &self.strings[key.module];
+
 				let desc = match self.strings.get(key.name) {
 					Some(name) => format!("{module}::{name}"),
 					None => module.to_string(),
 				};
+
 				anyhow::bail!("import of `{}` defined twice", desc)
 			},
 			Entry::Vacant(v) => {
 				v.insert(item);
 			},
 		}
+
 		Ok(())
 	}
 
@@ -158,10 +161,15 @@ impl<T> Router<T> {
 		if let Some(idx) = self.string2idx.get(string) {
 			return *idx;
 		}
+
 		let string:Arc<str> = string.into();
+
 		let idx = self.strings.len();
+
 		self.strings.push(string.clone());
+
 		self.string2idx.insert(string, idx);
+
 		idx
 	}
 }
@@ -218,6 +226,7 @@ async fn uri_scheme_inner<T>(
 	log::debug!("call result {:?}", response);
 
 	let mut resp = Response::builder().status(StatusCode::OK);
+
 	resp.headers_mut().unwrap().insert(
 		CONTENT_TYPE,
 		tauri::http::header::HeaderValue::from_static("application/octet-stream"),

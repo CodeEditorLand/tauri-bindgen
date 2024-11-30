@@ -128,6 +128,7 @@ fn run() -> Result<()> {
 	let start = Instant::now();
 
 	let out_dir = &opt.common.out_dir.unwrap_or_default();
+
 	match opt.cmd {
 		Command::Check { world } => check_interface(world)?,
 		Command::Host(HostGenerator { builder, world, .. }) => {
@@ -171,11 +172,13 @@ fn run() -> Result<()> {
 			let iface = wit_parser::parse_and_resolve_file(&world.wit, |t| skipset.contains(t))?;
 
 			let stdout = std::io::stdout().lock();
+
 			if pretty {
 				serde_json::to_writer_pretty(stdout, &iface).into_diagnostic()?;
 			} else {
 				serde_json::to_writer(stdout, &iface).into_diagnostic()?;
 			}
+
 			println!(); // print a newline for formatting
 		},
 	};
@@ -189,11 +192,13 @@ fn write_file(out_dir:&Path, path:&Path, contents:&str) -> Result<()> {
 	let dst = out_dir.join(path);
 
 	log::info!("Generating {dst:?}");
+
 	if let Some(parent) = dst.parent() {
 		std::fs::create_dir_all(parent)
 			.into_diagnostic()
 			.wrap_err(format!("failed to create {parent:?}"))?;
 	}
+
 	std::fs::write(&dst, contents)
 		.into_diagnostic()
 		.wrap_err(format!("failed to write {dst:?}"))?;

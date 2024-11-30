@@ -13,6 +13,7 @@ extern {
 
 fn main() {
 	console_error_panic_hook::set_once();
+
 	wasm_logger::init(wasm_logger::Config::default());
 
 	let on_change = Closure::wrap(Box::new(|value:JsValue| {
@@ -26,6 +27,7 @@ fn main() {
 		match parse_res {
 			Ok(iface) => {
 				update_output("errors", "");
+
 				update_output(
 					"guest-rust",
 					&gen_interface(
@@ -37,6 +39,7 @@ fn main() {
 						iface.clone(),
 					),
 				);
+
 				update_output(
 					"host",
 					&gen_interface(
@@ -44,6 +47,7 @@ fn main() {
 						iface.clone(),
 					),
 				);
+
 				update_output(
 					"guest-js",
 					&gen_interface(
@@ -51,6 +55,7 @@ fn main() {
 						iface.clone(),
 					),
 				);
+
 				update_output(
 					"guest-ts",
 					&gen_interface(
@@ -58,7 +63,9 @@ fn main() {
 						iface.clone(),
 					),
 				);
+
 				let markdown = gen_interface(tauri_bindgen_gen_markdown::Builder {}, iface);
+
 				let parser = Parser::new_ext(
 					&markdown,
 					Options::ENABLE_STRIKETHROUGH
@@ -66,8 +73,11 @@ fn main() {
 						| Options::ENABLE_TABLES
 						| Options::ENABLE_TASKLISTS,
 				);
+
 				let mut html_output = String::new();
+
 				html::push_html(&mut html_output, parser);
+
 				update_output("markdown", &html_output);
 			},
 			Err(err) => {

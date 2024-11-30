@@ -20,6 +20,7 @@ use wit_parser::{
 
 pub trait JavaScriptGenerator {
 	fn interface(&self) -> &Interface;
+
 	fn infos(&self) -> &TypeInfos;
 
 	fn print_deserialize_function_result(&self, result:&FunctionResult) -> String {
@@ -87,16 +88,19 @@ pub trait JavaScriptGenerator {
 			Type::List(ty) if **ty == Type::U8 => "deserializeBytes(de)".to_string(),
 			Type::List(ty) => {
 				let inner = self.print_deserialize_ty(ty);
+
 				format!("deserializeList(de, (de) => {inner})")
 			},
 			Type::Option(ty) => {
 				let ty = self.print_deserialize_ty(ty);
+
 				format!("deserializeOption(de, (de) => {ty})")
 			},
 			Type::Result { ok, err } => {
 				let ok = ok.as_ref().map_or("() => {}".to_string(), |ty| {
 					format!("(de) => {}", self.print_deserialize_ty(ty))
 				});
+
 				let err = err.as_ref().map_or("() => {}".to_string(), |ty| {
 					format!("(de) => {}", self.print_deserialize_ty(ty))
 				});
@@ -121,6 +125,7 @@ pub trait JavaScriptGenerator {
 
 	fn print_deserialize_typedef(&self, id:TypeDefId) -> String {
 		let typedef = &self.interface().typedefs[id];
+
 		let ident = &typedef.ident.to_upper_camel_case();
 
 		match &typedef.kind {
@@ -203,6 +208,7 @@ pub trait JavaScriptGenerator {
 
     switch (tag) {{
         {cases}
+
         default:
             throw new Error(`unknown variant case ${{tag}}`)
     }}
@@ -230,6 +236,7 @@ pub trait JavaScriptGenerator {
 
     switch (tag) {{
         {cases}
+
         default:
             throw new Error(`unknown enum case ${{tag}}`)
     }}
@@ -261,6 +268,7 @@ pub trait JavaScriptGenerator {
 
     switch (tag) {{
         {cases}
+
         default:
             throw new Error(`unknown union case ${{tag}}`)
     }}
@@ -312,6 +320,7 @@ pub trait JavaScriptGenerator {
 			Type::Result { ok, err } => {
 				let ok =
 					ok.as_ref().map_or("{}".to_string(), |ty| self.print_serialize_ty("v", ty));
+
 				let err =
 					err.as_ref().map_or("{}".to_string(), |ty| self.print_serialize_ty("v", ty));
 
@@ -332,6 +341,7 @@ pub trait JavaScriptGenerator {
 
 	fn print_serialize_typedef(&self, id:TypeDefId) -> String {
 		let typedef = &self.interface().typedefs[id];
+
 		let ident = &typedef.ident.to_upper_camel_case();
 
 		match &typedef.kind {
@@ -399,6 +409,7 @@ pub trait JavaScriptGenerator {
 				"if ({prop_access}) {{
     serializeU32(out, {tag});
     {inner}
+
     return
 }}
 "
@@ -435,6 +446,7 @@ pub trait JavaScriptGenerator {
 			r#"function serialize{ident}(out, val) {{
     switch (val) {{
         {cases}
+
         default:
             throw new Error("unknown enum case")
     }}
@@ -449,12 +461,14 @@ pub trait JavaScriptGenerator {
 			.enumerate()
 			.fold(String::new(), |mut str, (tag, (name, case))| {
 				let prop_access = format!("val.{name}");
+
 				let inner = self.print_serialize_ty(&prop_access, &case.ty);
 
 				let _ = write!(
 					str,
 					"if ({prop_access}) {{
     serializeU32(out, {tag});
+
     return {inner}
 }}
                 "
@@ -477,45 +491,79 @@ bitflags::bitflags! {
 	#[derive(Debug, Clone, Copy)]
 	pub struct SerdeUtils: u32 {
 		const VARINT_MAX        = 1 << 1;
+
 		const _VARINT           = 1 << 2;
 
 		const BOOl              = 1 << 3;
+
 		const BITS8             = 1 << 4;
+
 		const BITS16            = 1 << 5;
+
 		const BITS32            = 1 << 6;
+
 		const BITS64            = 1 << 7;
+
 		const BITS128           = 1 << 8;
+
 		const SIGNED            = 1 << 9;
+
 		const UNSIGNED          = 1 << 10;
 
 		const F32               = 1 << 12;
+
 		const F64               = 1 << 13;
+
 		const _CHAR             = 1 << 14;
+
 		const _STRING           = 1 << 15;
+
 		const _BYTES            = 1 << 16;
+
 		const _OPTION           = 1 << 17;
+
 		const _RESULT           = 1 << 18;
+
 		const _LIST             = 1 << 19;
+
 		const DE                = 1 << 20;
+
 		const SER               = 1 << 21;
+
 		const STR_UTIL          = 1 << 22;
 
 		const VARINT            = Self::_VARINT.bits() | Self::VARINT_MAX.bits();
+
 		const U8               = Self::BITS8.bits() | Self::VARINT.bits() | Self::UNSIGNED.bits();
+
 		const U16               = Self::BITS16.bits() | Self::VARINT.bits() | Self::UNSIGNED.bits();
+
 		const U32               = Self::BITS32.bits() | Self::VARINT.bits() | Self::UNSIGNED.bits();
+
 		const U64               = Self::BITS64.bits() | Self::VARINT.bits() | Self::UNSIGNED.bits();
+
 		const U128              = Self::BITS128.bits() | Self::VARINT.bits() | Self::UNSIGNED.bits();
+
 		const S8                = Self::BITS8.bits() | Self::VARINT.bits() | Self::SIGNED.bits();
+
 		const S16               = Self::BITS16.bits() | Self::VARINT.bits() | Self::SIGNED.bits();
+
 		const S32               = Self::BITS32.bits() | Self::VARINT.bits() | Self::SIGNED.bits();
+
 		const S64               = Self::BITS64.bits() | Self::VARINT.bits() | Self::SIGNED.bits();
+
 		const S128              = Self::BITS128.bits() | Self::VARINT.bits() | Self::SIGNED.bits();
+
 		const CHAR              = Self::_CHAR.bits() | Self::U64.bits() | Self::STR_UTIL.bits();
+
 		const STRING            = Self::_STRING.bits() | Self::U64.bits() | Self::STR_UTIL.bits();
+
 		const BYTES             = Self::_BYTES.bits() | Self::U64.bits();
+
 		const OPTION            = Self::_OPTION.bits() | Self::U32.bits();
+
 		const RESULT            = Self::_RESULT.bits() | Self::U32.bits();
+
 		const LIST              = Self::_LIST.bits() | Self::U64.bits();
 	}
 }
@@ -709,17 +757,20 @@ impl SerdeUtils {
 		for func in functions {
 			for (_, ty) in &func.params {
 				info |= SerdeUtils::SER;
+
 				info |= Self::collect_type_info(typedefs, ty);
 			}
 
 			match &func.result {
 				Some(FunctionResult::Anon(ty)) => {
 					info |= SerdeUtils::DE;
+
 					info |= Self::collect_type_info(typedefs, ty);
 				},
 				Some(FunctionResult::Named(results)) => {
 					for (_, ty) in results {
 						info |= SerdeUtils::DE;
+
 						info |= Self::collect_type_info(typedefs, ty);
 					}
 				},
@@ -732,6 +783,7 @@ impl SerdeUtils {
 
 	fn collect_typedef_info(typedefs:&TypeDefArena, id:TypeDefId) -> SerdeUtils {
 		let mut info = SerdeUtils::empty();
+
 		match &typedefs[id].kind {
 			TypeDefKind::Alias(ty) => {
 				info |= Self::collect_type_info(typedefs, ty);
@@ -743,6 +795,7 @@ impl SerdeUtils {
 			},
 			TypeDefKind::Variant(cases) => {
 				info |= SerdeUtils::U32;
+
 				for case in cases {
 					if let Some(ty) = &case.ty {
 						info |= Self::collect_type_info(typedefs, ty);
@@ -751,6 +804,7 @@ impl SerdeUtils {
 			},
 			TypeDefKind::Union(cases) => {
 				info |= SerdeUtils::U32;
+
 				for case in cases {
 					info |= Self::collect_type_info(typedefs, &case.ty);
 				}
@@ -801,6 +855,7 @@ impl SerdeUtils {
 				let ok = ok
 					.as_ref()
 					.map_or(SerdeUtils::empty(), |ty| Self::collect_type_info(typedefs, ty));
+
 				let err = err
 					.as_ref()
 					.map_or(SerdeUtils::empty(), |ty| Self::collect_type_info(typedefs, ty));

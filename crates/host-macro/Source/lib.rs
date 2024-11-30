@@ -25,11 +25,15 @@ impl Parse for Opt {
 
 		if l.peek(Token![async]) {
 			input.parse::<Token![async]>()?;
+
 			input.parse::<Token![:]>()?;
+
 			Ok(Opt::Async(input.parse::<syn::LitBool>()?.value))
 		} else if l.peek(kw::tracing) {
 			input.parse::<kw::tracing>()?;
+
 			input.parse::<Token![:]>()?;
+
 			Ok(Opt::Tracing(input.parse::<syn::LitBool>()?.value))
 		} else {
 			Err(l.error())

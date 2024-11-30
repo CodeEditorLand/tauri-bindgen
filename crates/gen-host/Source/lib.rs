@@ -66,6 +66,7 @@ impl RustGenerator for Host {
 
 	fn additional_attrs(&self, ident:&str, info:TypeInfo) -> Option<TokenStream> {
 		let mut attrs = vec![];
+
 		if self.uses_two_names(info) {
 			if ident.ends_with("Param") {
 				attrs.push(quote! { serde::Deserialize });
@@ -76,6 +77,7 @@ impl RustGenerator for Host {
 			if info.contains(TypeInfo::PARAM) {
 				attrs.push(quote! { serde::Deserialize });
 			}
+
 			if info.contains(TypeInfo::RESULT) {
 				attrs.push(quote! { serde::Serialize });
 			}
@@ -97,10 +99,12 @@ impl RustGenerator for Host {
 		let docs = self.print_docs(docs);
 
 		let mut resources = HashSet::new();
+
 		for func in functions {
 			for (_, ty) in &func.params {
 				self.extract_resources(ty, &mut resources);
 			}
+
 			if let Some(result) = &func.result {
 				for ty in result.types() {
 					self.extract_resources(ty, &mut resources);
@@ -189,12 +193,14 @@ impl RustGenerator for Host {
 			},
 			Type::Result { ok, err } => {
 				let ok = ok.as_ref().map(|ty| self.print_ty(ty, mode)).unwrap_or(quote! { () });
+
 				let err = err.as_ref().map(|ty| self.print_ty(ty, mode)).unwrap_or(quote! { () });
 
 				quote! { Result<#ok, #err> }
 			},
 			Type::Id(id) => {
 				let typedef = &self.interface().typedefs[*id];
+
 				let info = self.infos()[*id];
 
 				if let TypeDefKind::Resource(_) = &typedef.kind {
@@ -292,17 +298,21 @@ impl Host {
 
 	fn print_router_fn_definition(&self, mod_name:&str, func:&Function) -> TokenStream {
 		let func_name = func.id.to_snake_case();
+
 		let func_ident = format_ident!("{}", func_name);
 
 		let param_decl = match func.params.len() {
 			0 => quote! { () },
 			1 => {
 				let ty = &func.params.first().unwrap().1;
+
 				let ty = self.print_ty(ty, &BorrowMode::Owned);
+
 				quote! { #ty }
 			},
 			_ => {
 				let tys = func.params.iter().map(|(_, ty)| self.print_ty(ty, &BorrowMode::Owned));
+
 				quote! { (#(#tys),*) }
 			},
 		};
@@ -313,8 +323,10 @@ impl Host {
 			_ => {
 				let ids = func.params.iter().enumerate().map(|(i, _)| {
 					let i = Literal::usize_unsuffixed(i);
+
 					quote! { p.#i }
 				});
+
 				quote! { #(#ids),* }
 			},
 		};
@@ -322,13 +334,16 @@ impl Host {
 		if self.opts.async_ {
 			quote! {
 				let get_cx = ::std::sync::Arc::clone(&wrapped_get_cx);
+
 				router.define_async(
 					#mod_name,
 					#func_name,
 					move |ctx: ::tauri_bindgen_host::ipc_router_wip::Caller<T>, p: #param_decl| {
 						let get_cx = get_cx.clone();
+
 						Box::pin(async move {
 							let ctx = get_cx(ctx.data());
+
 							Ok(ctx.#func_ident(#param_acc).await)
 						})
 					})?;
@@ -336,6 +351,7 @@ impl Host {
 		} else {
 			quote! {
 				let get_cx = ::std::sync::Arc::clone(&wrapped_get_cx);
+
 				router.define(
 					#mod_name,
 					#func_name,
@@ -356,6 +372,7 @@ impl Host {
 		method:&Function,
 	) -> TokenStream {
 		let func_name = method.id.to_snake_case();
+
 		let func_ident = format_ident!("{}", func_name);
 
 		let param_decl = method.params.iter().map(|(_, ty)| self.print_ty(ty, &BorrowMode::Owned));
@@ -366,26 +383,33 @@ impl Host {
 			_ => {
 				let ids = method.params.iter().enumerate().map(|(i, _)| {
 					let i = Literal::usize_unsuffixed(i + 1);
+
 					quote! { p.#i }
 				});
+
 				quote! { #(#ids),* }
 			},
 		};
 
 		let mod_name = format!("{mod_name}::resource::{resource_name}");
+
 		let get_r_ident = format_ident!("get_{}", resource_name.to_snake_case());
 
 		if self.opts.async_ {
 			quote! {
 				let get_cx = ::std::sync::Arc::clone(&wrapped_get_cx);
+
 				router.define_async(
 					#mod_name,
 					#func_name,
 					move |ctx: ::tauri_bindgen_host::ipc_router_wip::Caller<T>, p: (::tauri_bindgen_host::ResourceId, #(#param_decl),*)| {
 						let get_cx = get_cx.clone();
+
 						Box::pin(async move {
 							let ctx = get_cx(ctx.data());
+
 							let r = ctx.#get_r_ident(p.0)?;
+
 							Ok(r.#func_ident(#param_acc).await)
 						})
 					})?;
@@ -393,6 +417,7 @@ impl Host {
 		} else {
 			quote! {
 				let get_cx = ::std::sync::Arc::clone(&wrapped_get_cx);
+
 				router.define(
 					#mod_name,
 					#func_name,
@@ -401,7 +426,9 @@ impl Host {
 						p: (::tauri_bindgen_host::ResourceId, #(#param_decl),*)
 					| {
 						let ctx = get_cx(ctx.data());
+
 						let r = ctx.#get_r_ident(p.0)?;
+
 						Ok(r.#func_ident(#param_acc))
 					},
 				)?;
@@ -450,6 +477,7 @@ impl Generate for Host {
 		let docs = self.print_docs(&self.interface.docs);
 
 		let iface_name = self.interface.ident.to_snake_case();
+
 		let ident = format_ident!("{}", iface_name);
 
 		let typedefs = self
@@ -471,6 +499,7 @@ impl Generate for Host {
 		let resources = self.interface.typedefs.iter().filter_map(|(_, typedef)| {
             if let TypeDefKind::Resource(_) = &typedef.kind {
                 let ident = format_ident!("{}", typedef.ident.to_upper_camel_case());
+
                 let func_ident = format_ident!("get_{}", typedef.ident.to_snake_case());
 
                 Some(quote! {
@@ -502,6 +531,7 @@ impl Generate for Host {
 			#[rustfmt::skip]
 			pub mod #ident {
 				use ::tauri_bindgen_host::serde;
+
 				use ::tauri_bindgen_host::bitflags;
 
 				#typedefs
@@ -515,6 +545,7 @@ impl Generate for Host {
 
 	fn to_file(&mut self) -> (PathBuf, String) {
 		let mut filename = PathBuf::from(self.interface.ident.to_kebab_case());
+
 		filename.set_extension("rs");
 
 		let tokens = self.to_tokens();

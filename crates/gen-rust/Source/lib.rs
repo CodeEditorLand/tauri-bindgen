@@ -22,9 +22,13 @@ use wit_parser::{
 
 pub trait RustGenerator {
 	fn interface(&self) -> &Interface;
+
 	fn infos(&self) -> &TypeInfos;
+
 	fn additional_attrs(&self, ident:&str, info:TypeInfo) -> Option<TokenStream>;
+
 	fn default_param_mode(&self) -> BorrowMode;
+
 	fn print_resource(
 		&self,
 		print_resource:&str,
@@ -39,7 +43,9 @@ pub trait RustGenerator {
 
 		for id in ids {
 			let typedef = &self.interface().typedefs[id];
+
 			let info = self.infos()[id];
+
 			let variants = self.variants_of(&typedef.ident.to_upper_camel_case(), info, mode);
 
 			for TypeVariant { ident, borrow_mode } in variants {
@@ -141,12 +147,14 @@ pub trait RustGenerator {
 			},
 			Type::Result { ok, err } => {
 				let ok = ok.as_ref().map(|ty| self.print_ty(ty, mode)).unwrap_or(quote! { () });
+
 				let err = err.as_ref().map(|ty| self.print_ty(ty, mode)).unwrap_or(quote! { () });
 
 				quote! { Result<#ok, #err> }
 			},
 			Type::Id(id) => {
 				let typedef = &self.interface().typedefs[*id];
+
 				let info = self.infos()[*id];
 
 				let ident = if self.uses_two_names(info) {
@@ -178,7 +186,9 @@ pub trait RustGenerator {
 		mode:&BorrowMode,
 	) -> TokenStream {
 		let docs = self.print_docs(docs);
+
 		let ty = self.print_ty(ty, mode);
+
 		let generics = print_generics(info, mode);
 
 		quote! {
@@ -196,8 +206,11 @@ pub trait RustGenerator {
 		mode:&BorrowMode,
 	) -> TokenStream {
 		let docs = self.print_docs(docs);
+
 		let additional_attrs = self.additional_attrs(&ident.to_string(), info);
+
 		let generics = print_generics(info, mode);
+
 		let fields = fields.iter().map(|field| self.print_record_field(field, mode));
 
 		quote! {
@@ -212,8 +225,11 @@ pub trait RustGenerator {
 
 	fn print_record_field(&self, field:&RecordField, mode:&BorrowMode) -> TokenStream {
 		let docs = self.print_docs(&field.docs);
+
 		let borrow_attr = self.needs_borrow(&field.ty, mode).then_some(quote! { #[serde(borrow)] });
+
 		let ident = format_ident!("{}", field.id.to_snake_case());
+
 		let ty = self.print_ty(&field.ty, mode);
 
 		quote! {
@@ -231,12 +247,16 @@ pub trait RustGenerator {
 		info:TypeInfo,
 	) -> TokenStream {
 		let docs = self.print_docs(docs);
+
 		let additional_attrs = self.additional_attrs(&ident.to_string(), info);
+
 		let repr = self.print_int(&flags_repr(fields));
 
 		let fields = fields.iter().enumerate().map(|(i, FlagsField { docs, id: ident })| {
 			let docs = self.print_docs(docs);
+
 			let ident = format_ident!("{}", ident.TO_SHOUTY_SNEK_CASE());
+
 			let i = Literal::usize_unsuffixed(i);
 
 			quote! {
@@ -265,8 +285,11 @@ pub trait RustGenerator {
 		mode:&BorrowMode,
 	) -> TokenStream {
 		let docs = self.print_docs(docs);
+
 		let additional_attrs = self.additional_attrs(&ident.to_string(), info);
+
 		let generics = print_generics(info, mode);
+
 		let cases = cases.iter().map(|case| self.print_variant_case(case, mode));
 
 		quote! {
@@ -281,6 +304,7 @@ pub trait RustGenerator {
 
 	fn print_variant_case(&self, case:&VariantCase, mode:&BorrowMode) -> TokenStream {
 		let docs = self.print_docs(&case.docs);
+
 		let ident = format_ident!("{}", case.id.to_upper_camel_case());
 
 		let payload = case.ty.as_ref().map(|ty| {
@@ -297,7 +321,9 @@ pub trait RustGenerator {
 
 	fn print_enum(&self, docs:&str, ident:&Ident, cases:&[EnumCase], info:TypeInfo) -> TokenStream {
 		let docs = self.print_docs(docs);
+
 		let additional_attrs = self.additional_attrs(&ident.to_string(), info);
+
 		let cases = cases.iter().map(|case| self.print_enum_case(case));
 
 		quote! {
@@ -312,6 +338,7 @@ pub trait RustGenerator {
 
 	fn print_enum_case(&self, case:&EnumCase) -> TokenStream {
 		let docs = self.print_docs(&case.docs);
+
 		let ident = format_ident!("{}", case.id.to_upper_camel_case());
 
 		quote! {
@@ -329,13 +356,17 @@ pub trait RustGenerator {
 		mode:&BorrowMode,
 	) -> TokenStream {
 		let docs = self.print_docs(docs);
+
 		let additional_attrs = self.additional_attrs(&ident.to_string(), info);
+
 		let generics = print_generics(info, mode);
 
 		let cases = union_case_names(&self.interface().typedefs, cases).into_iter().zip(cases).map(
 			|(name, case)| {
 				let docs = self.print_docs(&case.docs);
+
 				let ident = format_ident!("{}", name);
+
 				let ty = self.print_ty(&case.ty, mode);
 
 				quote! {
@@ -362,10 +393,13 @@ pub trait RustGenerator {
 		results_mode:&BorrowMode,
 	) -> TokenStream {
 		let docs = self.print_docs(&sig.func.docs);
+
 		let ident = format_ident!("{}", sig.func.id.to_snake_case());
 
 		let pub_ = (!sig.private).then_some(quote! { pub });
+
 		let unsafe_ = sig.unsafe_.then_some(quote! { unsafe });
+
 		let async_ = sig.async_.then_some(quote! { async });
 
 		let self_arg = sig.self_arg.as_ref().map(|arg| quote! { #arg, });
@@ -387,6 +421,7 @@ pub trait RustGenerator {
 	fn print_function_params(&self, params:&[(String, Type)], mode:&BorrowMode) -> TokenStream {
 		let params = params.iter().map(|(ident, ty)| {
 			let ident = format_ident!("{}", ident.to_snake_case());
+
 			let ty = self.print_ty(ty, mode);
 
 			quote! { #ident: #ty }
@@ -405,6 +440,7 @@ pub trait RustGenerator {
 			FunctionResult::Named(types) if types.is_empty() => quote! {},
 			FunctionResult::Named(types) if types.len() == 1 => {
 				let (_, ty) = &types[0];
+
 				let ty = self.print_ty(ty, mode);
 
 				quote! { -> #ty }
@@ -460,6 +496,7 @@ pub trait RustGenerator {
 				borrow_mode:default_mode.clone(),
 			});
 		}
+
 		if info.contains(TypeInfo::RESULT)
 			&& (!info.contains(TypeInfo::PARAM) || self.uses_two_names(info))
 		{
@@ -468,6 +505,7 @@ pub trait RustGenerator {
 				borrow_mode:BorrowMode::Owned,
 			});
 		}
+
 		result
 	}
 

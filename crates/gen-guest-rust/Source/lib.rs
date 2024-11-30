@@ -86,6 +86,7 @@ impl RustGenerator for RustWasm {
 
 	fn additional_attrs(&self, ident:&str, info:TypeInfo) -> Option<TokenStream> {
 		let mut attrs = vec![];
+
 		if self.uses_two_names(info) {
 			if ident.ends_with("Param") {
 				attrs.push(quote! { serde::Serialize });
@@ -96,6 +97,7 @@ impl RustGenerator for RustWasm {
 			if info.contains(TypeInfo::PARAM) {
 				attrs.push(quote! { serde::Serialize });
 			}
+
 			if info.contains(TypeInfo::RESULT) {
 				attrs.push(quote! { serde::Deserialize });
 			}
@@ -115,7 +117,9 @@ impl RustGenerator for RustWasm {
 		info:TypeInfo,
 	) -> TokenStream {
 		let docs = self.print_docs(docs);
+
 		let additional_attrs = self.additional_attrs(&ident.to_string(), info);
+
 		let functions = functions.iter().map(|func| {
             let sig = FnSig {
                 async_: true,
@@ -132,6 +136,7 @@ impl RustGenerator for RustWasm {
             );
 
             let mod_ident = format!("{mod_ident}::resource::{}", ident.to_string().to_snake_case());
+
             let ident = func.id.to_snake_case();
 
             let param_idents = func
@@ -182,6 +187,7 @@ impl tauri_bindgen_core::Generate for RustWasm {
 			#[allow(clippy::all)]
 			pub mod #ident {
 				use ::tauri_bindgen_guest_rust::serde;
+
 				use ::tauri_bindgen_guest_rust::bitflags;
 				#typedefs
 
@@ -192,6 +198,7 @@ impl tauri_bindgen_core::Generate for RustWasm {
 
 	fn to_file(&mut self) -> (PathBuf, String) {
 		let mut filename = PathBuf::from(self.interface.ident.to_kebab_case());
+
 		filename.set_extension("rs");
 
 		let tokens = self.to_tokens();

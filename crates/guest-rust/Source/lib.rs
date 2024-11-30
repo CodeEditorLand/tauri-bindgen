@@ -29,11 +29,15 @@ where
 	P: Serialize,
 	R: DeserializeOwned, {
 	let mut opts = RequestInit::new();
+
 	opts.method("POST");
+
 	opts.mode(RequestMode::Cors);
 
 	let bytes = postcard::to_allocvec(val)?;
+
 	let body = unsafe { Uint8Array::view(&bytes) };
+
 	opts.body(Some(&body));
 
 	let url = format!("ipc://localhost/{module}/{method}");
@@ -46,17 +50,20 @@ where
 		.map_err(Error::JsError)?;
 
 	let window = web_sys::window().ok_or(Error::NoWindow)?;
+
 	let resp_value = JsFuture::from(window.fetch_with_request(&request))
 		.await
 		.map_err(Error::JsError)?;
 
 	// `resp_value` is a `Response` object.
 	assert!(resp_value.is_instance_of::<Response>());
+
 	let resp:Response = resp_value.dyn_into().map_err(Error::JsError)?;
 
 	let body = JsFuture::from(resp.array_buffer().map_err(Error::JsError)?)
 		.await
 		.map_err(Error::JsError)?;
+
 	let body = Uint8Array::new(&body);
 
 	Ok(postcard::from_bytes(&body.to_vec())?)

@@ -7,6 +7,7 @@ tauri_bindgen_guest_rust::generate!({
 #[component]
 pub fn App<G:Html>(cx:Scope) -> View<G> {
 	let name = create_signal(cx, String::new());
+
 	let greet_msg = create_signal(cx, String::new());
 
 	let do_greet = move |_| {
@@ -25,6 +26,7 @@ pub fn App<G:Html>(cx:Scope) -> View<G> {
 					"Greet"
 				}
 			}
+
 			p {
 				b {
 					(greet_msg.get())
