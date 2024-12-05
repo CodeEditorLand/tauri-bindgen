@@ -14,9 +14,9 @@ sycamore = { git = "https://github.com/sycamore-rs/sycamore", rev = "abd556cbc02
 	"hydrate",
 ] }
 tauri-bindgen-guest-rust = { path = "../../crates/guest-rust" }
-log = "0.4.17"
+log = { version = "0.4.17" }
 tracing-wasm = "0.2.1"
-console_error_panic_hook = "0.1.7"
+console_error_panic_hook = { version = "0.1.7" }
 
 [features]
 ssg = ["sycamore/ssr"]

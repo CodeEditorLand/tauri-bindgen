@@ -6,16 +6,16 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-logos = "0.13.0"
+logos = { version = "0.13.0" }
 thiserror.workspace = true
 id-arena = "2.2.1"
 miette.workspace = true
-distance = "0.4.0"
+distance = { version = "0.4.0" }
 log.workspace = true
 serde = { workspace = true, features = ["derive"] }
 schemars.workspace = true
 
 [dev-dependencies]
-pretty_assertions = "1.4.0"
+pretty_assertions = { version = "1.4.0" }
 schemars = { version = "0.8.16", features = ["impl_json_schema"] }
 serde_json.workspace = true

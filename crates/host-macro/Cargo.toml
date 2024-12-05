@@ -11,6 +11,6 @@ path = "Source/lib.rs"
 
 [dependencies]
 proc-macro2 = "1.0"
-syn = "2.0"
+syn = { version = "2.0" }
 tauri-bindgen-gen-host.workspace = true
 rust-macro-shared = { path = "../rust-macro-shared" }

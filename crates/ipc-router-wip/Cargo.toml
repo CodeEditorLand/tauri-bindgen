@@ -6,7 +6,7 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-anyhow = "1.0.75"
+anyhow = { version = "1.0.75" }
 serde.workspace = true
 log.workspace = true
 postcard = { version = "1.0.7", features = ["alloc"] }
