@@ -10,7 +10,7 @@ use std::{
 };
 
 use clap::{ArgAction, Parser};
-use miette::{bail, IntoDiagnostic, Result, WrapErr};
+use miette::{IntoDiagnostic, Result, WrapErr, bail};
 use tauri_bindgen_core::GeneratorBuilder;
 
 /// Helper for passing VERSION to opt.

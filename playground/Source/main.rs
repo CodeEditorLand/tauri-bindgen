@@ -1,5 +1,5 @@
 use miette::NamedSource;
-use pulldown_cmark::{html, Options, Parser};
+use pulldown_cmark::{Options, Parser, html};
 use tauri_bindgen_core::GeneratorBuilder;
 use wasm_bindgen::prelude::*;
 use wit_parser::Interface;

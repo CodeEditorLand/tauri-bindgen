@@ -1,7 +1,7 @@
 use std::io::Write;
 
 use env_logger::fmt::Color;
-use log::{log_enabled, Level};
+use log::{Level, log_enabled};
 
 pub fn init(verbosity:u8) {
 	let mut builder = env_logger::Builder::from_default_env();
