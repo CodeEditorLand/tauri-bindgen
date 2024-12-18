@@ -1,5 +1,5 @@
 use js_sys::Uint8Array;
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 pub use tauri_bindgen_guest_rust_macro::*;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::JsFuture;

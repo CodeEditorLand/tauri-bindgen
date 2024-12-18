@@ -19,7 +19,7 @@ use logos::Logos;
 use miette::{ErrReport, IntoDiagnostic, NamedSource};
 use parse::FromTokens;
 use schemars::JsonSchema;
-use serde::{ser::SerializeSeq, Serialize};
+use serde::{Serialize, ser::SerializeSeq};
 use typecheck::Resolver;
 use util::detect_invalid_input;
 

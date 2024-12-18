@@ -6,9 +6,6 @@ use id_arena::{Arena, Id};
 use logos::Span;
 
 use crate::{
-	lex,
-	parse,
-	util::{find_similar, print_list, IteratorExt},
 	EnumCase,
 	Error,
 	FlagsField,
@@ -22,6 +19,9 @@ use crate::{
 	TypeDefKind,
 	UnionCase,
 	VariantCase,
+	lex,
+	parse,
+	util::{IteratorExt, find_similar, print_list},
 };
 
 pub struct RestInterface {
@@ -419,7 +419,6 @@ impl<'a> Resolver<'a> {
 #[cfg(test)]
 mod test {
 	use logos::Lexer;
-
 	use parse::FromTokens;
 
 	use super::*;

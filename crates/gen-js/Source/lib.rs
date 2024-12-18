@@ -2,7 +2,7 @@ use std::fmt;
 
 use fmt::Write;
 use heck::{ToLowerCamelCase, ToUpperCamelCase};
-use tauri_bindgen_core::{flags_repr, union_case_names, TypeInfos};
+use tauri_bindgen_core::{TypeInfos, flags_repr, union_case_names};
 use wit_parser::{
 	EnumCase,
 	FlagsField,

@@ -7,10 +7,10 @@ use std::{collections::HashSet, marker, path::PathBuf};
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{
+	Token,
 	parse::{Error, Parse, ParseStream, Result},
 	punctuated::Punctuated,
 	token,
-	Token,
 };
 use tauri_bindgen_core::GeneratorBuilder;
 

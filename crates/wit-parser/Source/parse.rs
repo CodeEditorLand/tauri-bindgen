@@ -5,10 +5,10 @@ use std::iter::Peekable;
 use logos::{Span, SpannedIter};
 
 use crate::{
-	lex::Token,
-	util::{find_similar, print_list},
 	Error,
 	Result,
+	lex::Token,
+	util::{find_similar, print_list},
 };
 
 pub type Tokens<'a> = Peekable<SpannedIter<'a, Token>>;
@@ -490,7 +490,6 @@ fn parse_docs(tokens:&mut Tokens) -> Vec<Span> {
 #[cfg(test)]
 mod test {
 	use logos::Lexer;
-
 	use pretty_assertions::assert_eq;
 
 	use super::*;

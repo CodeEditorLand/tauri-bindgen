@@ -166,7 +166,6 @@ impl Token {
 		Token::Variant,
 		Token::Resource,
 	];
-
 	pub const TYPE_KEYWORD:[Token; 20] = [
 		Token::U8,
 		Token::U16,

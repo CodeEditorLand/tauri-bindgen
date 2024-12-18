@@ -4,7 +4,7 @@ use heck::{ToShoutySnekCase, ToSnakeCase, ToUpperCamelCase};
 use proc_macro2::{Ident, Literal, TokenStream};
 use quote::{format_ident, quote};
 use syn::Lifetime;
-use tauri_bindgen_core::{flags_repr, union_case_names, TypeInfo, TypeInfos};
+use tauri_bindgen_core::{TypeInfo, TypeInfos, flags_repr, union_case_names};
 use wit_parser::{
 	EnumCase,
 	FlagsField,

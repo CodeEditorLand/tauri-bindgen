@@ -11,7 +11,7 @@ use heck::{ToKebabCase, ToSnakeCase, ToUpperCamelCase};
 use proc_macro2::{Literal, TokenStream};
 use quote::{format_ident, quote};
 use tauri_bindgen_core::{Generate, GeneratorBuilder, TypeInfo, TypeInfos};
-use tauri_bindgen_gen_rust::{print_generics, BorrowMode, FnSig, RustGenerator};
+use tauri_bindgen_gen_rust::{BorrowMode, FnSig, RustGenerator, print_generics};
 use wit_parser::{Function, Interface, Type, TypeDefKind};
 
 #[derive(Default, Debug, Clone)]

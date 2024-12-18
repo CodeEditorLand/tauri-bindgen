@@ -1,7 +1,7 @@
 #![allow(clippy::missing_panics_doc, clippy::missing_errors_doc)]
 
 use std::{
-	collections::{hash_map::Entry, HashMap},
+	collections::{HashMap, hash_map::Entry},
 	future::Future,
 	marker::PhantomData,
 	pin::Pin,
@@ -10,8 +10,8 @@ use std::{
 
 pub use anyhow::Error;
 use futures_util::FutureExt;
-use serde::{de::DeserializeOwned, Serialize};
-use tauri::http::{header::CONTENT_TYPE, Request, Response, StatusCode};
+use serde::{Serialize, de::DeserializeOwned};
+use tauri::http::{Request, Response, StatusCode, header::CONTENT_TYPE};
 
 type Definition<T> =
 	Box<dyn Fn(Caller<T>, &[u8]) -> anyhow::Result<CallResult> + Send + Sync + 'static>;

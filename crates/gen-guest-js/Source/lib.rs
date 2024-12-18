@@ -3,7 +3,7 @@
 use std::{fmt::Write, path::PathBuf};
 
 use heck::{ToKebabCase, ToLowerCamelCase, ToSnakeCase, ToUpperCamelCase};
-use tauri_bindgen_core::{postprocess, Generate, GeneratorBuilder, TypeInfo, TypeInfos};
+use tauri_bindgen_core::{Generate, GeneratorBuilder, TypeInfo, TypeInfos, postprocess};
 use tauri_bindgen_gen_js::{JavaScriptGenerator, SerdeUtils};
 use wit_parser::{Function, FunctionResult, Interface, Type, TypeDefKind};
 

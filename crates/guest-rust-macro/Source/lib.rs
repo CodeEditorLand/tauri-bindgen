@@ -1,7 +1,7 @@
 use proc_macro::TokenStream;
 use syn::{
-	parse::{Parse, ParseStream, Result},
 	Token,
+	parse::{Parse, ParseStream, Result},
 };
 use tauri_bindgen_gen_guest_rust::Builder;
 
